@@ -1,0 +1,29 @@
+# Виртуальное окружение
+.venv/
+env/
+venv/
+
+# Кэш Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+
+# Кэш инструментов статического анализа и тестов
+.pytest_cache/
+.ruff_cache/
+.basedpyright/
+
+# Сборка и дистрибутивы
+build/
+dist/
+*.spec
+
+# Артефакты IDE
+.vscode/
+.idea/
+*.swp
+
+# Временные тестовые файлы
+*.log
+tests/fixtures/tmp/
