@@ -1,19 +1,19 @@
 from abc import ABC, abstractmethod
 from pathlib import Path
 
-from freight_check.contracts import DocumentPackage
+from freight_check.parsers.models import RawDocument
 
 
 class BaseParser(ABC):
     """Абстрактный базовый класс для всех парсеров документов."""
 
     @abstractmethod
-    def parse(self, file_path: Path) -> DocumentPackage:
+    def parse(self, file_path: Path) -> RawDocument:
         """
-        Извлекает данные из файла и возвращает DocumentPackage.
+        Извлекает сырые данные из файла.
 
         :param file_path: Путь к файлу.
-        :return: Заполненный DocumentPackage.
+        :return: RawDocument с извлеченными текстовыми блоками и координатами.
         :raises FileNotFoundError: Если файл не найден.
         :raises ValueError: Если файл поврежден или имеет неверный формат.
         """

@@ -1,55 +1,54 @@
 from pathlib import Path
 import openpyxl
 
-from freight_check.contracts import DocumentPackage, ExtractedField
+from freight_check.contracts import ExtractedField
 from freight_check.parsers.base import BaseParser
+from freight_check.parsers.models import RawDocument
 
 
 class XLSXParser(BaseParser):
     """Парсер для таблиц Excel (.xlsx)."""
 
-    def parse(self, file_path: Path) -> DocumentPackage:
+    def parse(self, file_path: Path) -> RawDocument:
         self._validate_file(file_path)
 
-        package = DocumentPackage(
-            document_role="unknown",
-            file_path=str(file_path)
-        )
+        pages: list[list[ExtractedField]] = []
 
         try:
             workbook = openpyxl.load_workbook(file_path, read_only=True, data_only=True)
 
-            raw_rows = []
             for sheet in workbook.worksheets:
-                raw_rows.extend(self._process_sheet(sheet))
+                page_data = self._process_sheet(sheet)
+                pages.append(page_data)
 
             workbook.close()
 
-            # Пока что во временное поле для последующей семантической обработки
-            package._raw_rows = raw_rows
-
         except Exception as e:
-            package.parsing_errors.append(f"Ошибка чтения XLSX: {str(e)}")
+            raise ValueError(f"Ошибка чтения XLSX: {str(e)}")
 
-        return package
+        return RawDocument(
+            file_path=file_path,
+            pages=pages,
+            document_type="xlsx",
+            metadata={"sheets_count": len(pages)}
+        )
 
-    def _process_sheet(self, sheet) -> list[list[ExtractedField]]:
+    def _process_sheet(self, sheet) -> list[ExtractedField]:
         """Проходит по ячейкам листа и извлекает текст с координатами."""
-        rows_data = []
+        cells_data: list[ExtractedField] = []
 
         for row in sheet.iter_rows():
-            row_data = []
             for cell in row:
                 if cell.value is not None:
                     extracted = ExtractedField(
                         raw_value=str(cell.value),
                         normalized_value=str(cell.value).strip(),
-                        confidence=1.0,
+                        confidence=1.0,  # Для структурированных файлов всегда 1.0
                         source_box=(cell.row, cell.column, 1, 1)
                     )
-                    row_data.append(extracted)
+                    cells_data.append(extracted)
                 else:
-                    row_data.append(None)
-            rows_data.append(row_data)
+                    # Пустые ячейки не сохраняем, чтобы не раздувать память
+                    pass
 
-        return rows_data
+        return cells_data
