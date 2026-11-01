@@ -1,5 +1,7 @@
-import pytest
 from pathlib import Path
+
+import pytest
+
 from freight_check.parsers.xls_parser import XLSParser
 
 

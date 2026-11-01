@@ -1,7 +1,7 @@
 from abc import ABC, abstractmethod
 from pathlib import Path
 
-from freight_check.parsers.models import RawDocument
+from freight_check.contracts import RawDocument
 
 
 class BaseParser(ABC):

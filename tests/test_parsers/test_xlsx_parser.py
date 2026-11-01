@@ -1,9 +1,10 @@
-import pytest
 from pathlib import Path
-import openpyxl
 
+import openpyxl
+import pytest
+
+from freight_check.contracts import RawDocument
 from freight_check.parsers.xlsx_parser import XLSXParser
-from freight_check.parsers.models import RawDocument
 
 
 @pytest.fixture
@@ -12,12 +13,12 @@ def sample_xlsx(tmp_path: Path) -> Path:
     file_path = tmp_path / "test_order.xlsx"
     wb = openpyxl.Workbook()
     ws = wb.active
+    assert ws is not None
 
-    # Заполняем ячейки
     ws["A1"] = "Госномер ТС"
     ws["B1"] = "А123ВС77"
     ws["A2"] = "Вес груза"
-    ws["B2"] = 20000  # Число, чтобы проверить парсинг разных типов
+    ws["B2"] = 20000
 
     wb.save(file_path)
     return file_path
@@ -69,9 +70,6 @@ def test_parse_empty_file(empty_xlsx: Path) -> None:
     raw_doc = parser.parse(empty_xlsx)
 
     assert isinstance(raw_doc, RawDocument)
-
-    # В пустом файле по умолчанию есть 1 пустой лист
     assert len(raw_doc.pages) == 1
     assert raw_doc.metadata["sheets_count"] == 1
-
     assert len(raw_doc.pages[0]) == 0

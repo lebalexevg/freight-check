@@ -1,9 +1,10 @@
-import pytest
 from pathlib import Path
+
+import pytest
 from docx import Document
 
+from freight_check.contracts import RawDocument
 from freight_check.parsers.docx_parser import DOCXParser
-from freight_check.parsers.models import RawDocument
 
 
 @pytest.fixture
@@ -21,7 +22,7 @@ def sample_docx(tmp_path: Path) -> Path:
     table.cell(1, 0).text = "Вес груза"
     table.cell(1, 1).text = "20000 кг"
 
-    doc.save(file_path)
+    doc.save(str(file_path))
     return file_path
 
 
@@ -30,7 +31,7 @@ def empty_docx(tmp_path: Path) -> Path:
     """Создает пустой docx файл."""
     file_path = tmp_path / "empty.docx"
     doc = Document()
-    doc.save(file_path)
+    doc.save(str(file_path))
     return file_path
 
 
@@ -50,7 +51,6 @@ def test_parse_valid_docx(sample_docx: Path) -> None:
     assert "Заявка на перевозку №123" in values
     assert "Госномер ТС: А123ВС77" in values
     assert "20000 кг" in values
-
     assert all(c.confidence == 1.0 for c in flat_cells)
 
 

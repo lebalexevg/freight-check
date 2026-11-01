@@ -1,21 +1,22 @@
-import pytest
 from pathlib import Path
+
+import pytest
 from reportlab.lib.pagesizes import A4
-from reportlab.pdfgen import canvas
 from reportlab.pdfbase import pdfmetrics
 from reportlab.pdfbase.ttfonts import TTFont
+from reportlab.pdfgen import canvas
 
+from freight_check.contracts import RawDocument
 from freight_check.parsers.pdf_text_parser import PDFTextParser
-from freight_check.parsers.models import RawDocument
 
 # Регистрируем системный шрифт Arial для генерации тестовых PDF
 # (Это нужно только для тестов, чтобы reportlab умел рисовать кириллицу)
 try:
-    pdfmetrics.registerFont(TTFont('Arial', 'C:\\Windows\\Fonts\\arial.ttf'))
-    TEST_FONT = 'Arial'
+    pdfmetrics.registerFont(TTFont("Arial", "C:\\Windows\\Fonts\\arial.ttf"))
+    TEST_FONT = "Arial"
 except Exception:
     # Фолбэк, если вдруг шрифт не найден (например, на Linux в CI)
-    TEST_FONT = 'Helvetica'
+    TEST_FONT = "Helvetica"
 
 
 @pytest.fixture
