@@ -1,0 +1,351 @@
+/* ===================================================================
+   Стили утилиты «Рейс-Проверка» (freight-check)
+   Тема: Современная контрастная десктопная тема
+   =================================================================== */
+
+/* Базовые параметры окна и шрифтов */
+QMainWindow, QDialog {
+    background-color: #F1F5F9;
+    color: #0F172A;
+    font-family: "Segoe UI", -apple-system, BlinkMacSystemFont, "Roboto", sans-serif;
+    font-size: 13px;
+}
+
+QWidget {
+    color: #0F172A;
+}
+
+/* Карточки и контейнеры */
+QFrame#cardFrame {
+    background-color: #FFFFFF;
+    border: 1px solid #E2E8F0;
+    border-radius: 8px;
+}
+
+QFrame#headerFrame {
+    background-color: #FFFFFF;
+    border: 1px solid #E2E8F0;
+    border-radius: 8px;
+}
+
+/* Зоны Drag-and-Drop */
+QFrame#dropZone {
+    background-color: #FFFFFF;
+    border: 2px dashed #CBD5E1;
+    border-radius: 8px;
+    padding: 18px;
+}
+
+QFrame#dropZone:hover {
+    border-color: #3B82F6;
+    background-color: #F8FAFC;
+}
+
+QFrame#dropZone[dragOver="true"] {
+    border-color: #2563EB;
+    background-color: #EFF6FF;
+}
+
+QFrame#dropZone[hasFile="true"] {
+    border: 2px solid #94A3B8;
+    background-color: #F8FAFC;
+}
+
+/* Кнопки */
+QPushButton {
+    background-color: #FFFFFF;
+    color: #334155;
+    border: 1px solid #CBD5E1;
+    border-radius: 6px;
+    padding: 6px 14px;
+    font-weight: 500;
+    font-size: 13px;
+}
+
+QPushButton:hover {
+    background-color: #F8FAFC;
+    border-color: #94A3B8;
+    color: #0F172A;
+}
+
+QPushButton:pressed {
+    background-color: #E2E8F0;
+}
+
+QPushButton:disabled {
+    background-color: #F1F5F9;
+    color: #94A3B8;
+    border-color: #E2E8F0;
+}
+
+/* Основная акцентная кнопка (Primary CTA) */
+QPushButton#primaryButton {
+    background-color: #2563EB;
+    color: #FFFFFF;
+    border: 1px solid #1D4ED8;
+    border-radius: 6px;
+    padding: 8px 20px;
+    font-weight: 600;
+    font-size: 14px;
+}
+
+QPushButton#primaryButton:hover {
+    background-color: #1D4ED8;
+}
+
+QPushButton#primaryButton:pressed {
+    background-color: #1E40AF;
+}
+
+QPushButton#primaryButton:disabled {
+    background-color: #93C5FD;
+    border-color: #93C5FD;
+    color: #FFFFFF;
+}
+
+/* Кнопка сброса / вторичная */
+QPushButton#secondaryButton {
+    background-color: #F8FAFC;
+    color: #475569;
+    border: 1px solid #E2E8F0;
+}
+
+QPushButton#secondaryButton:hover {
+    background-color: #F1F5F9;
+    color: #1E293B;
+}
+
+/* Кнопки фильтрации */
+QPushButton#filterButton {
+    background-color: #FFFFFF;
+    color: #475569;
+    border: 1px solid #CBD5E1;
+    border-radius: 15px;
+    padding: 6px 14px;
+    font-size: 12px;
+    font-weight: 500;
+}
+
+QPushButton#filterButton:hover {
+    background-color: #F1F5F9;
+    border-color: #94A3B8;
+}
+
+QPushButton#filterButton:checked {
+    background-color: #2563EB;
+    color: #FFFFFF;
+    border: 1px solid #1D4ED8;
+    font-weight: 600;
+}
+
+/* Поля ввода и поиска */
+QLineEdit {
+    background-color: #FFFFFF;
+    color: #0F172A;
+    border: 1px solid #CBD5E1;
+    border-radius: 6px;
+    padding: 8px 12px;
+    selection-background-color: #3B82F6;
+    selection-color: #FFFFFF;
+}
+
+QLineEdit:focus {
+    border: 1px solid #3B82F6;
+}
+
+/* Выпадающие списки (QComboBox) */
+QComboBox {
+    background-color: #FFFFFF;
+    color: #0F172A;
+    border: 1px solid #CBD5E1;
+    border-radius: 6px;
+    padding: 6px 12px;
+    min-height: 22px;
+}
+
+QComboBox:hover {
+    border-color: #94A3B8;
+}
+
+QComboBox:focus {
+    border: 1px solid #3B82F6;
+}
+
+QComboBox::drop-down {
+    subcontrol-origin: padding;
+    subcontrol-position: top right;
+    width: 28px;
+    border-left: none;
+}
+
+QComboBox QAbstractItemView {
+    background-color: #FFFFFF;
+    color: #0F172A;
+    border: 1px solid #CBD5E1;
+    border-radius: 6px;
+    selection-background-color: #EFF6FF;
+    selection-color: #1D4ED8;
+    padding: 6px;
+}
+
+/* Таблица расхождений (QTableWidget) */
+QTableWidget {
+    background-color: #FFFFFF;
+    color: #0F172A;
+    border: 1px solid #E2E8F0;
+    border-radius: 8px;
+    gridline-color: #F1F5F9;
+    alternate-background-color: #F8FAFC;
+    selection-background-color: #EFF6FF;
+    selection-color: #0F172A;
+}
+
+QTableWidget::item {
+    padding: 0px 12px;
+    border-bottom: 1px solid #F1F5F9;
+}
+
+QTableWidget::item:selected {
+    background-color: #EFF6FF;
+    color: #0F172A;
+}
+
+QHeaderView::section {
+    background-color: #F8FAFC;
+    color: #475569;
+    padding: 12px 14px;
+    font-weight: 600;
+    font-size: 13px;
+    border: none;
+    border-bottom: 1px solid #CBD5E1;
+    border-right: 1px solid #E2E8F0;
+}
+
+/* Полоса прогресса (QProgressBar) */
+QProgressBar {
+    background-color: #E2E8F0;
+    border: none;
+    border-radius: 4px;
+    height: 8px;
+    text-align: center;
+}
+
+QProgressBar::chunk {
+    background-color: #2563EB;
+    border-radius: 4px;
+}
+
+/* Панель сводки статуса рейса (KPI Card) */
+QFrame#statusBanner_MATCH {
+    background-color: #F0FDF4;
+    border: 1px solid #86EFAC;
+    border-radius: 8px;
+}
+
+QFrame#statusBanner_CRITICAL {
+    background-color: #FEF2F2;
+    border: 1px solid #FCA5A5;
+    border-radius: 8px;
+}
+
+QFrame#statusBanner_WARNING {
+    background-color: #FFFBEB;
+    border: 1px solid #FCD34D;
+    border-radius: 8px;
+}
+
+QFrame#statusBanner_UNCERTAIN {
+    background-color: #F8FAFC;
+    border: 1px solid #CBD5E1;
+    border-radius: 8px;
+}
+
+/* Статусные бейджи в ячейках таблицы */
+QLabel#badge_MATCH {
+    background-color: #DCFCE7;
+    color: #166534;
+    border: 1px solid #86EFAC;
+    border-radius: 14px;
+    padding: 0px 16px;
+    font-size: 12px;
+    font-weight: 600;
+    min-height: 28px;
+    max-height: 28px;
+}
+
+QLabel#badge_CRITICAL {
+    background-color: #FEE2E2;
+    color: #991B1B;
+    border: 1px solid #FCA5A5;
+    border-radius: 14px;
+    padding: 0px 16px;
+    font-size: 12px;
+    font-weight: 600;
+    min-height: 28px;
+    max-height: 28px;
+}
+
+QLabel#badge_WARNING {
+    background-color: #FEF3C7;
+    color: #92400E;
+    border: 1px solid #FCD34D;
+    border-radius: 14px;
+    padding: 0px 16px;
+    font-size: 12px;
+    font-weight: 600;
+    min-height: 28px;
+    max-height: 28px;
+}
+
+QLabel#badge_UNCERTAIN {
+    background-color: #F1F5F9;
+    color: #475569;
+    border: 1px solid #CBD5E1;
+    border-radius: 14px;
+    padding: 0px 16px;
+    font-size: 12px;
+    font-weight: 600;
+    min-height: 28px;
+    max-height: 28px;
+}
+
+/* Полоса прокрутки (QScrollBar) */
+QScrollBar:vertical {
+    background-color: #F1F5F9;
+    width: 8px;
+    margin: 0;
+}
+
+QScrollBar::handle:vertical {
+    background-color: #CBD5E1;
+    border-radius: 4px;
+    min-height: 20px;
+}
+
+QScrollBar::handle:vertical:hover {
+    background-color: #94A3B8;
+}
+
+QScrollBar::add-line:vertical, QScrollBar::sub-line:vertical {
+    height: 0;
+}
+
+QScrollBar:horizontal {
+    background-color: #F1F5F9;
+    height: 8px;
+    margin: 0;
+}
+
+QScrollBar::handle:horizontal {
+    background-color: #CBD5E1;
+    border-radius: 4px;
+    min-width: 20px;
+}
+
+QScrollBar::handle:horizontal:hover {
+    background-color: #94A3B8;
+}
+
+QScrollBar::add-line:horizontal, QScrollBar::sub-line:horizontal {
+    width: 0;
+}
