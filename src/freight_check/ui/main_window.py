@@ -15,6 +15,7 @@ from pathlib import Path
 
 from PySide6.QtGui import QKeySequence, QShortcut
 from PySide6.QtWidgets import (
+    QApplication,
     QCheckBox,
     QLabel,
     QMainWindow,
@@ -50,6 +51,9 @@ class MainWindow(QMainWindow):
 
     def __init__(self) -> None:
         super().__init__()
+        app = QApplication.instance()
+        if app is not None and isinstance(app, QApplication):
+            app.setApplicationDisplayName("")
         self.setWindowTitle("Рейс-Проверка — Кросс-валидация документов")
         self.resize(1140, 840)
         self.setMinimumSize(960, 640)
@@ -71,23 +75,24 @@ class MainWindow(QMainWindow):
         root_layout.setContentsMargins(16, 12, 16, 12)
         root_layout.setSpacing(10)
 
-        # 1. Адаптивная сплит-панель документов (Empty State vs Loaded State 36px)
-        self._doc_slots = DocumentSlotsWidget(self)
-        self._doc_slots.files_ready.connect(self._on_files_ready)
-        self._doc_slots.files_changed.connect(self._on_files_changed)
-        root_layout.addWidget(self._doc_slots)
-
-        # 2. Плоская командная строка сводки и управления (36px, всегда видна)
+        # 1. Плоская командная строка сводки и управления (36px, всегда видна вверху)
         self._summary_bar = SummaryBarWidget(self)
         self._summary_bar.setup_scenarios(self._scenarios, self._on_scenario_selected)
         self._summary_bar.reset_requested.connect(self._reset_all)
         self._summary_bar.filter_only_diffs_changed.connect(self._diff_table_filter_changed)
         root_layout.addWidget(self._summary_bar)
 
-        # 3. Таблица сопоставления расхождений (~80% высоты окна)
+        # 2. Адаптивная сплит-панель документов (Empty State во весь экран vs Loaded State 36px)
+        self._doc_slots = DocumentSlotsWidget(self)
+        self._doc_slots.files_ready.connect(self._on_files_ready)
+        self._doc_slots.files_changed.connect(self._on_files_changed)
+        root_layout.addWidget(self._doc_slots, stretch=1)
+
+        # 3. Таблица сопоставления расхождений (~80% высоты окна при загрузке)
         self._diff_table = DiffTableWidget(self)
         self._diff_table.value_copied.connect(self._on_value_copied)
-        root_layout.addWidget(self._diff_table, stretch=1)
+        self._diff_table.setVisible(False)
+        root_layout.addWidget(self._diff_table, stretch=0)
 
         # 4. Системный статус-бар
         self._setup_status_bar()
@@ -140,16 +145,43 @@ class MainWindow(QMainWindow):
             with open(style_path, encoding="utf-8") as f:
                 self.setStyleSheet(f.read())
 
+    def _update_view_state(self) -> None:
+        """Переключает видимость и растягивание виджетов между Empty и Loaded состояниями."""
+        has_both = self._doc_slots.has_both_files()
+        central = self.centralWidget()
+        if central and central.layout():
+            layout = central.layout()
+            if isinstance(layout, QVBoxLayout):
+                if has_both:
+                    layout.setStretchFactor(self._doc_slots, 0)
+                    layout.setStretchFactor(self._diff_table, 1)
+                else:
+                    layout.setStretchFactor(self._doc_slots, 1)
+                    layout.setStretchFactor(self._diff_table, 0)
+        self._diff_table.setVisible(has_both)
+
     def _on_files_ready(self, order_path: str, waybill_path: str) -> None:
         """Автоматический запуск сверки при наличии обоих документов (Zero-Click)."""
         self._start_validation(order_path, waybill_path)
 
     def _on_files_changed(self) -> None:
         """Обработка изменения файлов в слотах."""
+        self._update_view_state()
         if not self._doc_slots.has_both_files():
             self._summary_bar.reset()
             self._diff_table.clear()
-            self._status_text.setText("Прикрепите второй документ для запуска валидации")
+            has_order = self._doc_slots.get_order_path() is not None
+            has_waybill = self._doc_slots.get_waybill_path() is not None
+            if has_order and not has_waybill:
+                self._status_text.setText(
+                    "Прикрепите черновик ЭТрН / накладную для запуска валидации"
+                )
+            elif has_waybill and not has_order:
+                self._status_text.setText("Прикрепите заявку на перевозку для запуска валидации")
+            else:
+                self._status_text.setText(
+                    "Прикрепите документы или выберите демо-сценарий (Ctrl+D)"
+                )
 
     def _on_scenario_selected(self, scenario_key: str) -> None:
         """Загружает выбранный тестовый сценарий и автоматически запускает сверку."""
@@ -236,6 +268,7 @@ class MainWindow(QMainWindow):
         self._doc_slots.clear_all()
         self._summary_bar.reset()
         self._diff_table.clear()
+        self._update_view_state()
         self._progress_bar.setVisible(False)
         self._current_report = None
         self._selected_scenario_key = None

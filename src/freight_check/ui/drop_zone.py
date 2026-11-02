@@ -1,9 +1,10 @@
 """Виджеты зоны загрузки документов и адаптивная панель слотов (DropZone / DocumentSlots).
 
 Поддерживает два адаптивных состояния:
-1. Empty State (файлы не загружены): просторные Drag-and-Drop слоты с подсказками форматов.
-2. Loaded State (оба файла выбраны): ультракомпактная однострочная сплит-панель (40px)
-   с бейджами форматов, векторными Segoe-иконками замены/удаления и прямым Drag-and-Drop.
+1. Empty State (файлы не загружены): полноэкранные просторные Drag-and-Drop слоты
+   с крупными векторными Segoe-иконками документов, подсказками и кнопками выбора.
+2. Loaded State (оба файла выбраны): ультракомпактная однострочная сплит-панель (36px)
+   с префиксами ролей («Заявка:» / «ЭТрН:»), кнопками замены/удаления и прямым Drag-and-Drop.
 """
 
 from pathlib import Path
@@ -16,13 +17,17 @@ from PySide6.QtWidgets import (
     QHBoxLayout,
     QLabel,
     QPushButton,
+    QSizePolicy,
     QStackedLayout,
     QVBoxLayout,
     QWidget,
 )
 
 from freight_check.ui.icons import (
+    GLYPH_CHECK,
     GLYPH_CLOSE,
+    GLYPH_DOCUMENT,
+    GLYPH_FOLDER,
     GLYPH_REFRESH,
     create_segoe_icon,
 )
@@ -82,68 +87,179 @@ class DropZoneWidget(QFrame):
         self._is_compact: bool = False
 
         self.setObjectName("dropZone")
+        self.setProperty("compact", "false")
+        self.setProperty("hasFile", "false")
         self.setAcceptDrops(True)
+        self.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Expanding)
         self._setup_ui()
 
     def _setup_ui(self) -> None:
         self._stacked_layout = QStackedLayout(self)
         self._stacked_layout.setContentsMargins(0, 0, 0, 0)
 
-        # 1. Развернутый вид (Expanded / Empty State)
-        self._expanded_widget = QWidget()
-        exp_layout = QVBoxLayout(self._expanded_widget)
-        exp_layout.setContentsMargins(14, 12, 14, 12)
-        exp_layout.setSpacing(6)
+        # 1. Полноразмерный вид (Empty State — файл не выбран)
+        self._empty_widget = QWidget(self)
+        empty_layout = QVBoxLayout(self._empty_widget)
+        empty_layout.setContentsMargins(32, 24, 32, 24)
+        empty_layout.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        empty_layout.setSpacing(10)
 
-        # Заголовок
-        self._title_label = QLabel(self._title)
-        self._title_label.setStyleSheet("font-size: 13px; font-weight: 700; color: #0F172A;")
-        exp_layout.addWidget(self._title_label)
+        # Большая векторная иконка документа Segoe Fluent
+        self._doc_icon_label = QLabel(self._empty_widget)
+        doc_icon = create_segoe_icon(GLYPH_DOCUMENT, QColor("#3B82F6"), base_size=76)
+        self._doc_icon_label.setPixmap(doc_icon.pixmap(QSize(76, 76)))
+        self._doc_icon_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        self._doc_icon_label.setStyleSheet("border: none; background: transparent;")
+        empty_layout.addWidget(self._doc_icon_label)
 
-        # Подсказка
-        self._hint_label = QLabel(self._subtitle)
-        self._hint_label.setStyleSheet("color: #64748B; font-size: 11px;")
+        empty_layout.addSpacing(4)
+
+        # Заголовок шага
+        self._title_label = QLabel(self._title, self._empty_widget)
+        self._title_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        self._title_label.setStyleSheet(
+            "font-size: 16px; font-weight: 700; color: #0F172A; border: none; background: transparent;"
+        )
+        empty_layout.addWidget(self._title_label)
+
+        # Описание / подзаголовок роли
+        self._hint_label = QLabel(self._subtitle, self._empty_widget)
+        self._hint_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        self._hint_label.setStyleSheet(
+            "color: #64748B; font-size: 13px; border: none; background: transparent;"
+        )
         self._hint_label.setWordWrap(True)
-        exp_layout.addWidget(self._hint_label)
+        empty_layout.addWidget(self._hint_label)
 
-        # Кнопка выбора
-        btn_row = QHBoxLayout()
-        btn_row.setContentsMargins(0, 4, 0, 0)
-        self._browse_button = QPushButton("Выбрать файл...")
-        self._browse_button.setFixedHeight(28)
+        empty_layout.addSpacing(8)
+
+        # Кнопка выбора файла
+        self._browse_button = QPushButton("  Выбрать файл...", self._empty_widget)
+        self._browse_button.setObjectName("dropZoneBrowseBtn")
+        self._browse_button.setIcon(
+            create_segoe_icon(GLYPH_FOLDER, QColor("#0F172A"), base_size=16, y_offset=0.5)
+        )
+        self._browse_button.setIconSize(QSize(16, 16))
         self._browse_button.setCursor(Qt.CursorShape.PointingHandCursor)
+        self._browse_button.setFixedHeight(36)
         self._browse_button.clicked.connect(self._on_browse_clicked)
-        btn_row.addWidget(self._browse_button)
+        empty_layout.addWidget(self._browse_button, alignment=Qt.AlignmentFlag.AlignCenter)
 
-        btn_row.addStretch(1)
+        empty_layout.addSpacing(6)
 
-        formats_label = QLabel("PDF, XML, XLSX, DOCX, скан")
-        formats_label.setStyleSheet("color: #94A3B8; font-size: 11px;")
-        btn_row.addWidget(formats_label)
+        # Подсказка Drag-and-Drop
+        dnd_hint = QLabel("Перетащите файл сюда или нажмите кнопку выше", self._empty_widget)
+        dnd_hint.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        dnd_hint.setStyleSheet(
+            "color: #94A3B8; font-size: 12px; font-weight: 500; border: none; background: transparent;"
+        )
+        empty_layout.addWidget(dnd_hint)
 
-        exp_layout.addLayout(btn_row)
-        self._stacked_layout.addWidget(self._expanded_widget)
+        # Форматы
+        formats_label = QLabel(
+            "Поддерживаются: PDF, XML, XLSX, DOCX, скан (до 50 МБ)", self._empty_widget
+        )
+        formats_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        formats_label.setStyleSheet(
+            "color: #94A3B8; font-size: 11px; border: none; background: transparent;"
+        )
+        empty_layout.addWidget(formats_label)
 
-        # 2. Компактный однострочный вид (Compact / Loaded State)
-        self._compact_widget = QWidget()
+        self._stacked_layout.addWidget(self._empty_widget)
+
+        # 2. Полноразмерный вид при частичной загрузке (Loaded Expanded State — файл выбран, ждем второй)
+        self._loaded_expanded_widget = QWidget(self)
+        loaded_layout = QVBoxLayout(self._loaded_expanded_widget)
+        loaded_layout.setContentsMargins(32, 24, 32, 24)
+        loaded_layout.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        loaded_layout.setSpacing(10)
+
+        self._ready_icon_label = QLabel(self._loaded_expanded_widget)
+        ready_icon = create_segoe_icon(GLYPH_CHECK, QColor("#059669"), base_size=76)
+        self._ready_icon_label.setPixmap(ready_icon.pixmap(QSize(76, 76)))
+        self._ready_icon_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        self._ready_icon_label.setStyleSheet("border: none; background: transparent;")
+        loaded_layout.addWidget(self._ready_icon_label)
+
+        loaded_layout.addSpacing(4)
+
+        ready_status = QLabel("Документ прикреплен и готов", self._loaded_expanded_widget)
+        ready_status.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        ready_status.setStyleSheet(
+            "color: #059669; font-size: 12px; font-weight: 600; border: none; background: transparent;"
+        )
+        loaded_layout.addWidget(ready_status)
+
+        self._loaded_filename_label = QLabel("", self._loaded_expanded_widget)
+        self._loaded_filename_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        self._loaded_filename_label.setStyleSheet(
+            "font-size: 15px; font-weight: 700; color: #0F172A; border: none; background: transparent;"
+        )
+        loaded_layout.addWidget(self._loaded_filename_label)
+
+        self._loaded_filesize_label = QLabel("", self._loaded_expanded_widget)
+        self._loaded_filesize_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        self._loaded_filesize_label.setStyleSheet(
+            "color: #64748B; font-size: 12px; border: none; background: transparent;"
+        )
+        loaded_layout.addWidget(self._loaded_filesize_label)
+
+        loaded_layout.addSpacing(8)
+
+        # Кнопки действий друг под другом
+        action_col = QVBoxLayout()
+        action_col.setSpacing(8)
+        action_col.setAlignment(Qt.AlignmentFlag.AlignCenter)
+
+        replace_btn = QPushButton("  Заменить файл", self._loaded_expanded_widget)
+        replace_btn.setObjectName("expandedActionBtn")
+        replace_btn.setIcon(
+            create_segoe_icon(GLYPH_REFRESH, QColor("#334155"), base_size=14, y_offset=0.5)
+        )
+        replace_btn.setIconSize(QSize(14, 14))
+        replace_btn.setFixedHeight(32)
+        replace_btn.setFixedWidth(160)
+        replace_btn.setCursor(Qt.CursorShape.PointingHandCursor)
+        replace_btn.clicked.connect(self._on_browse_clicked)
+        action_col.addWidget(replace_btn, alignment=Qt.AlignmentFlag.AlignCenter)
+
+        clear_btn = QPushButton("  Удалить", self._loaded_expanded_widget)
+        clear_btn.setObjectName("expandedActionBtn")
+        clear_btn.setIcon(create_segoe_icon(GLYPH_CLOSE, QColor("#64748B"), base_size=13))
+        clear_btn.setIconSize(QSize(13, 13))
+        clear_btn.setFixedHeight(32)
+        clear_btn.setFixedWidth(160)
+        clear_btn.setCursor(Qt.CursorShape.PointingHandCursor)
+        clear_btn.clicked.connect(self.clear_file)
+        action_col.addWidget(clear_btn, alignment=Qt.AlignmentFlag.AlignCenter)
+
+        loaded_layout.addLayout(action_col)
+        self._stacked_layout.addWidget(self._loaded_expanded_widget)
+
+        # 3. Компактный однострочный вид (Compact / Loaded State — 36px)
+        self._compact_widget = QWidget(self)
         compact_layout = QHBoxLayout(self._compact_widget)
         compact_layout.setContentsMargins(12, 0, 12, 0)
         compact_layout.setAlignment(Qt.AlignmentFlag.AlignVCenter)
         compact_layout.setSpacing(8)
 
         # Текстовый префикс роли слота («Заявка:» или «ЭТрН:»)
-        self._role_label = QLabel(self._role_prefix)
+        self._role_label = QLabel(self._role_prefix, self._compact_widget)
         self._role_label.setObjectName("slotRoleLabel")
-        self._role_label.setStyleSheet("color: #64748B; font-size: 12px; font-weight: 500;")
+        self._role_label.setStyleSheet(
+            "color: #64748B; font-size: 12px; font-weight: 500; border: none; background: transparent;"
+        )
         compact_layout.addWidget(self._role_label)
 
         # Имя файла и размер
-        self._compact_name_label = QLabel()
-        self._compact_name_label.setStyleSheet("font-size: 12px; font-weight: 600; color: #0F172A;")
+        self._compact_name_label = QLabel("", self._compact_widget)
+        self._compact_name_label.setStyleSheet(
+            "font-size: 12px; font-weight: 600; color: #0F172A; border: none; background: transparent;"
+        )
         compact_layout.addWidget(self._compact_name_label, stretch=1)
 
         # Кнопка замены: плоская и компактная
-        self._replace_button = QPushButton("Заменить")
+        self._replace_button = QPushButton("Заменить", self._compact_widget)
         self._replace_button.setObjectName("compactActionBtn")
         self._replace_button.setIcon(
             create_segoe_icon(GLYPH_REFRESH, QColor("#475569"), 12, y_offset=1.0)
@@ -155,7 +271,7 @@ class DropZoneWidget(QFrame):
         compact_layout.addWidget(self._replace_button)
 
         # Кнопка удаления: плоская и компактная
-        self._clear_button = QPushButton()
+        self._clear_button = QPushButton(self._compact_widget)
         self._clear_button.setObjectName("compactClearBtn")
         self._clear_button.setIcon(create_segoe_icon(GLYPH_CLOSE, QColor("#64748B"), 12))
         self._clear_button.setIconSize(QSize(12, 12))
@@ -166,7 +282,7 @@ class DropZoneWidget(QFrame):
         compact_layout.addWidget(self._clear_button)
 
         # Сохраняем скрытую ссылку для обратной совместимости
-        self._compact_badge = QLabel()
+        self._compact_badge = QLabel(self._compact_widget)
         self._compact_badge.setVisible(False)
 
         self._stacked_layout.addWidget(self._compact_widget)
@@ -174,14 +290,21 @@ class DropZoneWidget(QFrame):
     def set_compact_mode(self, compact: bool) -> None:
         """Переключает режим отображения слота."""
         self._is_compact = compact
-        self._stacked_layout.setCurrentWidget(
-            self._compact_widget if compact else self._expanded_widget
-        )
+        self.setProperty("compact", "true" if compact else "false")
+        self.style().unpolish(self)
+        self.style().polish(self)
         if compact:
+            self._stacked_layout.setCurrentWidget(self._compact_widget)
             self.setFixedHeight(36)
+            self.setSizePolicy(QSizePolicy.Policy.Preferred, QSizePolicy.Policy.Fixed)
         else:
-            self.setMinimumHeight(96)
-            self.setMaximumHeight(116)
+            self.setMinimumHeight(0)
+            self.setMaximumHeight(16777215)
+            self.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Expanding)
+            if self.has_file():
+                self._stacked_layout.setCurrentWidget(self._loaded_expanded_widget)
+            else:
+                self._stacked_layout.setCurrentWidget(self._empty_widget)
 
     def dragEnterEvent(self, event: QDragEnterEvent) -> None:
         """Обработка наведения перетаскиваемых файлов."""
@@ -250,38 +373,57 @@ class DropZoneWidget(QFrame):
 
         self._compact_badge.setText(get_format_badge_text(self._file_path))
         self._compact_name_label.setText(f"{path.name}{size_str}")
+        self._compact_name_label.setToolTip(self._file_path)
+
+        self._loaded_filename_label.setText(path.name)
+        self._loaded_filesize_label.setText(size_str.strip(" ()") or "Файл готов к сверке")
 
         self.setProperty("hasFile", "true")
         self.style().unpolish(self)
         self.style().polish(self)
 
+        if self._is_compact:
+            self._stacked_layout.setCurrentWidget(self._compact_widget)
+        else:
+            self._stacked_layout.setCurrentWidget(self._loaded_expanded_widget)
+
         self.file_selected.emit(self._file_path)
 
     def clear_file(self) -> None:
-        """Очищает выбранный файл."""
+        """Очищает выбранный файл и возвращает слот в развернутое пустое состояние."""
         self._file_path = None
         self._compact_name_label.setText("")
+        self._compact_name_label.setToolTip("")
+        self._loaded_filename_label.setText("")
+        self._loaded_filesize_label.setText("")
+        self._compact_badge.setText("")
 
         self.setProperty("hasFile", "false")
         self.style().unpolish(self)
         self.style().polish(self)
 
+        if self._is_compact:
+            self._stacked_layout.setCurrentWidget(self._compact_widget)
+        else:
+            self._stacked_layout.setCurrentWidget(self._empty_widget)
+
         self.file_cleared.emit()
 
     def get_file_path(self) -> str | None:
-        """Возвращает путь к текущему файлу или None."""
+        """Возвращает текущий путь к файлу в слоте."""
         return self._file_path
 
     def has_file(self) -> bool:
-        """Проверяет, прикреплен ли файл к слоту."""
+        """Проверяет наличие файла в слоте."""
         return self._file_path is not None
 
 
 class DocumentSlotsWidget(QWidget):
     """Адаптивный контейнер для двух слотов документов (Заявка и Накладная).
 
-    Автоматически сворачивается в единую узкую сплит-панель высотой 40px,
-    когда выбраны оба документа, освобождая место для таблицы.
+    В пустом состоянии (Empty State) занимает все свободное пространство окна,
+    предоставляя просторные зоны Drag-and-Drop.
+    При заполнении обоих файлов автоматически сворачивается в компактную сплит-панель (36px).
     """
 
     files_ready = Signal(str, str)
@@ -289,6 +431,7 @@ class DocumentSlotsWidget(QWidget):
 
     def __init__(self, parent: QWidget | None = None) -> None:
         super().__init__(parent)
+        self.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Expanding)
         self._setup_ui()
 
     def _setup_ui(self) -> None:
@@ -298,7 +441,7 @@ class DocumentSlotsWidget(QWidget):
 
         self._order_slot = DropZoneWidget(
             title="1. Заявка на перевозку",
-            subtitle="Входящая заявка заказчика (PDF, Excel, Word, скан)",
+            subtitle="Входящая заявка заказчика",
             role_prefix="Заявка:",
             parent=self,
         )
@@ -308,7 +451,7 @@ class DocumentSlotsWidget(QWidget):
 
         self._waybill_slot = DropZoneWidget(
             title="2. Черновик ЭТрН / Накладная",
-            subtitle="Проект накладной (XML титул ФНС, скан, PDF)",
+            subtitle="Проект накладной",
             role_prefix="ЭТрН:",
             parent=self,
         )
@@ -331,11 +474,15 @@ class DocumentSlotsWidget(QWidget):
     def _update_presentation_mode(self) -> None:
         """Переключает слоты в компактный вид при заполнении обоих файлов."""
         has_both = self.has_both_files()
-        layout = self.layout()
-        if isinstance(layout, QHBoxLayout):
-            layout.setSpacing(10)
         self._order_slot.set_compact_mode(has_both)
         self._waybill_slot.set_compact_mode(has_both)
+        if has_both:
+            self.setFixedHeight(36)
+            self.setSizePolicy(QSizePolicy.Policy.Preferred, QSizePolicy.Policy.Fixed)
+        else:
+            self.setMinimumHeight(240)
+            self.setMaximumHeight(16777215)
+            self.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Expanding)
 
     def has_both_files(self) -> bool:
         """Возвращает True, если оба документа выбраны."""

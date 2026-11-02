@@ -154,9 +154,11 @@ def test_main_window_integration(qapp: QApplication) -> None:
     """Проверка инициализации и интеграции компонентов MainWindow."""
     window = MainWindow()
 
+    assert window.windowTitle() == "Рейс-Проверка — Кросс-валидация документов"
     assert not window._summary_bar.isHidden()
     assert "Ожидание документов" in window._summary_bar._status_badge.text()
     assert not window._doc_slots.has_both_files()
+    assert window._diff_table.isHidden()
 
     # Загрузка сценария через выбор демо-сценария
     first_scenario_key = list(window._scenarios.keys())[0]
@@ -166,6 +168,7 @@ def test_main_window_integration(qapp: QApplication) -> None:
     assert window._doc_slots.has_both_files()
     assert window._order_drop_zone.has_file()
     assert window._waybill_drop_zone.has_file()
+    assert not window._diff_table.isHidden()
 
     # Ждем завершения воркера и обрабатываем события Qt
     if window._worker is not None:
@@ -175,6 +178,7 @@ def test_main_window_integration(qapp: QApplication) -> None:
     # Проверяем, что отчет получен и UI обновился
     assert window._current_report is not None
     assert not window._summary_bar.isHidden()
+    assert not window._diff_table.isHidden()
     assert window._diff_table.row_count() > 0
 
     # Проверяем сброс всех данных
@@ -182,6 +186,7 @@ def test_main_window_integration(qapp: QApplication) -> None:
     assert not window._doc_slots.has_both_files()
     assert not window._order_drop_zone.has_file()
     assert not window._waybill_drop_zone.has_file()
+    assert window._diff_table.isHidden()
     assert not window._summary_bar.isHidden()
     assert "Ожидание документов" in window._summary_bar._status_badge.text()
 

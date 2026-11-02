@@ -20,7 +20,7 @@ def main() -> None:
         is_new_app = True
 
     app.setApplicationName("freight-check")
-    app.setApplicationDisplayName("Рейс-Проверка")
+    app.setApplicationDisplayName("")
     app.setOrganizationName("FreightCheck")
 
     window = MainWindow()

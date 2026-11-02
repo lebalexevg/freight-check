@@ -19,6 +19,8 @@ GLYPH_ERROR: str = "\uea39"  # Ошибка расхождения
 GLYPH_HELP: str = "\ue897"  # Вопрос / Неопределенность
 GLYPH_PLAY: str = "\ue768"  # Демо-сценарии
 GLYPH_TRASH: str = "\ue74d"  # Очистить всё
+GLYPH_DOCUMENT: str = "\ue8a5"  # Страница документа с загнутым уголком
+GLYPH_FOLDER: str = "\ue838"  # Папка / Обзор файлов
 
 
 DEFAULT_ICON_COLOR: QColor = QColor("#334155")

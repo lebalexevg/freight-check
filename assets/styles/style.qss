@@ -77,8 +77,8 @@ QMenu::item:selected {
 /* 2. Адаптивная зона документов */
 QFrame#dropZone {
     background-color: #FFFFFF;
-    border: 1px dashed #CBD5E1;
-    border-radius: 4px;
+    border: 2px dashed #CBD5E1;
+    border-radius: 8px;
 }
 
 QFrame#dropZone:hover {
@@ -92,10 +92,58 @@ QFrame#dropZone[dragOver="true"] {
     background-color: #EFF6FF;
 }
 
-QFrame#dropZone[hasFile="true"] {
+QFrame#dropZone[compact="true"] {
     border: 1px solid #E2E8F0;
-    border-radius: 4px;
+    border-radius: 0px;
     background-color: #FFFFFF;
+}
+
+QFrame#dropZone[compact="false"][hasFile="true"] {
+    border: 1px solid #94A3B8;
+    border-radius: 8px;
+    background-color: #FFFFFF;
+}
+
+/* Кнопка выбора файла в полноэкранной карточке */
+QPushButton#dropZoneBrowseBtn {
+    background-color: #FFFFFF;
+    color: #0F172A;
+    border: 1px solid #CBD5E1;
+    border-radius: 5px;
+    padding: 6px 20px;
+    font-size: 13px;
+    font-weight: 600;
+}
+
+QPushButton#dropZoneBrowseBtn:hover {
+    background-color: #EFF6FF;
+    border-color: #3B82F6;
+    color: #1D4ED8;
+}
+
+QPushButton#dropZoneBrowseBtn:pressed {
+    background-color: #DBEAFE;
+}
+
+/* Кнопки управления файлом в полноэкранном слоте (друг под другом) */
+QPushButton#expandedActionBtn {
+    background-color: #FFFFFF;
+    color: #334155;
+    border: 1px solid #CBD5E1;
+    border-radius: 5px;
+    padding: 6px 16px;
+    font-size: 12px;
+    font-weight: 600;
+}
+
+QPushButton#expandedActionBtn:hover {
+    background-color: #F8FAFC;
+    border-color: #94A3B8;
+    color: #0F172A;
+}
+
+QPushButton#expandedActionBtn:pressed {
+    background-color: #F1F5F9;
 }
 
 /* Кнопки внутри компактного слота документов (строгие, плоские) */
