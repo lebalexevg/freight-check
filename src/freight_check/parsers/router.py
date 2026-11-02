@@ -14,7 +14,7 @@ from freight_check.parsers.xml_parser import XMLParser
 
 
 class ParserRouter:
-    """Маршрутизатор, выбирающий подходящий парсер по расширению файла."""
+    """Маршрутизатор, выбирающий подходящий парсер на основе расширения файла."""
 
     _parsers: dict[str, type[BaseParser]] = {
         ".xlsx": XLSXParser,
@@ -22,7 +22,7 @@ class ParserRouter:
         ".csv": CSVParser,
         ".xml": XMLParser,
         ".docx": DOCXParser,
-        ".pdf": PDFTextParser,  # Цифровой PDF
+        ".pdf": PDFTextParser,
     }
 
     _ocr_extensions = {".png", ".jpg", ".jpeg", ".bmp", ".tiff", ".tif"}
@@ -40,6 +40,7 @@ class ParserRouter:
             return cls._detect_pdf_type(file_path)
 
         parser_class = cls._parsers.get(ext)
+
         if not parser_class:
             raise ValueError(f"Неподдерживаемый формат файла: {ext}")
 

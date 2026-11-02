@@ -16,7 +16,9 @@ class XLSXParser(BaseParser):
         pages: list[list[ExtractedField]] = []
 
         try:
-            workbook = openpyxl.load_workbook(str(file_path), read_only=True, data_only=True)
+            workbook = openpyxl.load_workbook(
+                str(file_path), read_only=True, data_only=True
+            )
 
             for sheet in workbook.worksheets:
                 page_data = self._process_sheet(sheet)
