@@ -8,12 +8,16 @@ from freight_check.parsers.preprocessing import ImagePreprocessor
 class OCREngine:
     """Обертка над RapidOCR для извлечения текста с координатами."""
 
-    def __init__(self) -> None:
+    def __init__(self, use_preprocessing: bool = True) -> None:
+        """
+        Args:
+            use_preprocessing: Применять предобработку изображений.
+                             Для сканов — True, для четких цифровых — False.
+        """
         self._engine = RapidOCR()
+        self._use_preprocessing = use_preprocessing
 
-    def recognize(
-            self, image: np.ndarray, min_confidence: float = 0.0
-    ) -> list[ExtractedField]:
+    def recognize(self, image: np.ndarray, min_confidence: float = 0.0) -> list[ExtractedField]:
         """Распознает текст на изображении.
 
         Args:
@@ -23,7 +27,8 @@ class OCREngine:
         Returns:
             Список извлеченных полей с координатами и уверенностью.
         """
-        processed_image = ImagePreprocessor.process(image)
+        # Предобработка только если включена
+        processed_image = ImagePreprocessor.process(image) if self._use_preprocessing else image
 
         result, _ = self._engine(processed_image)
 
