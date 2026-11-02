@@ -82,12 +82,12 @@ QFrame#dropZone {
 }
 
 QFrame#dropZone:hover {
-    border-color: #3B82F6;
-    background-color: #F8FAFC;
+    border-color: #2563EB;
+    background-color: #FFFFFF;
 }
 
 QFrame#dropZone[dragOver="true"] {
-    border-color: #2563EB;
+    border-color: #1D4ED8;
     border-style: solid;
     background-color: #EFF6FF;
 }
@@ -99,8 +99,13 @@ QFrame#dropZone[compact="true"] {
 }
 
 QFrame#dropZone[compact="false"][hasFile="true"] {
-    border: 1px solid #64748B;
+    border: 1px solid #CBD5E1;
     border-radius: 2px;
+    background-color: #FFFFFF;
+}
+
+QFrame#dropZone[compact="false"][hasFile="true"]:hover {
+    border: 1px solid #94A3B8;
     background-color: #FFFFFF;
 }
 
