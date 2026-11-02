@@ -4,12 +4,13 @@ from PySide6.QtCore import QRect, Qt
 from PySide6.QtGui import QImage, QPainter
 from PySide6.QtWidgets import QApplication, QStyleOptionViewItem
 
-from freight_check.contracts import ValidationRow, ValidationStatus
+from freight_check.contracts import SessionReport, ValidationRow, ValidationStatus
 from freight_check.ui.delegates import (
     DiffHighlightDelegate,
     ExplanationColumnDelegate,
     ParameterColumnDelegate,
 )
+from freight_check.ui.drop_zone import DocumentSlotsWidget
 from freight_check.ui.models import (
     IS_MONOSPACE_ROLE,
     RAW_VALUE_ROLE,
@@ -18,6 +19,7 @@ from freight_check.ui.models import (
     ValidationTableModel,
     compute_diff_spans,
 )
+from freight_check.ui.summary_bar import SummaryBarWidget
 
 
 def test_compute_diff_spans_identical() -> None:
@@ -191,3 +193,83 @@ def test_delegates_rendering(qapp: QApplication) -> None:
     # Проверка размерности
     size = param_delegate.sizeHint(option, model.index(0, 0))
     assert size.height() >= 34
+
+
+def test_document_slots_widget_state_transitions(qapp: QApplication) -> None:
+    """Проверка автоматического сворачивания слотов документов в 38px при наличии обоих файлов."""
+    slots = DocumentSlotsWidget()
+
+    # Начальное состояние: файлы не выбраны, слоты развернуты
+    assert not slots.has_both_files()
+    assert slots._order_slot._is_compact is False
+    assert slots._waybill_slot._is_compact is False
+
+    ready_signals: list[tuple[str, str]] = []
+    slots.files_ready.connect(lambda o, w: ready_signals.append((o, w)))
+
+    # Выбираем только заявку
+    slots._order_slot.set_file("order.pdf")
+    assert not slots.has_both_files()
+    assert slots._order_slot._is_compact is False
+    assert len(ready_signals) == 0
+
+    # Выбираем накладную -> оба файла есть -> автосворачивание в компактный вид (38px)
+    slots._waybill_slot.set_file("waybill.xml")
+    assert slots.has_both_files()
+    assert slots._order_slot._is_compact is True
+    assert slots._waybill_slot._is_compact is True
+    assert slots._order_slot.height() == 38
+    assert len(ready_signals) == 1
+    assert ready_signals[0] == (slots.get_order_path(), slots.get_waybill_path())
+
+    # Удаляем один файл -> авторазворачивание обратно в Empty State
+    slots._order_slot.clear_file()
+    assert not slots.has_both_files()
+    assert slots._order_slot._is_compact is False
+    assert slots._waybill_slot._is_compact is False
+
+    # Проверка clear_all()
+    slots.set_files("order2.pdf", "waybill2.xml")
+    assert slots.has_both_files()
+    slots.clear_all()
+    assert not slots.has_both_files()
+    assert slots.get_order_path() is None
+    assert slots.get_waybill_path() is None
+
+
+def test_summary_bar_widget(qapp: QApplication) -> None:
+    """Проверка 36px инфо-полосы сводки и переключателя 'Только расхождения'."""
+    bar = SummaryBarWidget()
+    assert bar.height() == 36
+    assert not bar.is_only_diffs_checked()
+
+    report = SessionReport(
+        overall_status=ValidationStatus.CRITICAL,
+        critical_errors_count=2,
+        warnings_count=1,
+        processing_time_ms=120,
+        rows=[
+            ValidationRow("Параметр 1", "А", "Б", ValidationStatus.CRITICAL, "Ошибка"),
+            ValidationRow("Параметр 2", "В", "Г", ValidationStatus.CRITICAL, "Ошибка 2"),
+            ValidationRow("Параметр 3", "Д", "Е", ValidationStatus.WARNING, "Внимание"),
+            ValidationRow("Параметр 4", "Ж", "Ж", ValidationStatus.MATCH, "Совпадение"),
+        ],
+    )
+
+    bar.set_report(report)
+    assert "● КРИТИЧЕСКИЕ РАСХОЖДЕНИЯ" in bar._status_badge.text()
+    assert "● 2 критических" in bar._critical_label.text()
+    assert "● 1 предупреждений" in bar._warning_label.text()
+    assert "● 1 совпадений" in bar._match_label.text()
+
+    # Проверка сигнала фильтрации
+    diff_filter_events: list[bool] = []
+    bar.filter_only_diffs_changed.connect(diff_filter_events.append)
+
+    bar.set_only_diffs_checked(True)
+    assert bar.is_only_diffs_checked() is True
+    assert diff_filter_events == [True]
+
+    bar.reset()
+    assert not bar.is_only_diffs_checked()
+    assert "ОЖИДАНИЕ" in bar._status_badge.text()
