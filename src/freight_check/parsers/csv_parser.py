@@ -60,9 +60,7 @@ class CSVParser(BaseParser):
                                     )
                                 )
             except Exception as e:
-                raise ValueError(
-                    "Ошибка чтения CSV (не удалось определить кодировку)"
-                ) from e
+                raise ValueError("Ошибка чтения CSV (не удалось определить кодировку)") from e
         except Exception as e:
             raise ValueError("Ошибка чтения CSV") from e
 

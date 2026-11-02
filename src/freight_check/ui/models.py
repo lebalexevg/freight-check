@@ -173,13 +173,12 @@ class ValidationTableModel(QAbstractTableModel):
         orientation: Qt.Orientation,
         role: int = Qt.ItemDataRole.DisplayRole,
     ) -> Any:
-        """Заголовки таблицы."""
-        if (
-            orientation == Qt.Orientation.Horizontal
-            and role == Qt.ItemDataRole.DisplayRole
-            and 0 <= section < len(COLUMN_HEADERS)
-        ):
-            return COLUMN_HEADERS[section]
+        """Заголовки таблицы со строгим левым выравниванием."""
+        if orientation == Qt.Orientation.Horizontal and 0 <= section < len(COLUMN_HEADERS):
+            if role == Qt.ItemDataRole.DisplayRole:
+                return COLUMN_HEADERS[section]
+            if role == Qt.ItemDataRole.TextAlignmentRole:
+                return int(Qt.AlignmentFlag.AlignLeft | Qt.AlignmentFlag.AlignVCenter)
         return None
 
     def data(
@@ -213,14 +212,24 @@ class ValidationTableModel(QAbstractTableModel):
                 return row.explanation
             return None
 
-        # 2. Всплывающие подсказки (ToolTip)
+        # 2. Всплывающие подсказки (ToolTip) с полным текстом для предотвращения обрезки
         if role == Qt.ItemDataRole.ToolTipRole:
-            if col_idx in (1, 2):
-                val = row.order_value if col_idx == 1 else row.waybill_value
-                return f"{val}\n(Двойной клик для копирования в буфер)"
+            if col_idx == 0:
+                return row.parameter_name
+            if col_idx == 1:
+                return f"Заявка (Эталон):\n{row.order_value}\n\n(Двойной клик для копирования)"
+            if col_idx == 2:
+                return f"Черновик ЭТрН / Накладная:\n{row.waybill_value}\n\n(Двойной клик для копирования)"
             if col_idx == 3:
-                return row.explanation
-            return row.parameter_name
+                return (
+                    row.explanation
+                    if row.status != ValidationStatus.MATCH
+                    else "Параметр полностью совпадает в обоих документах"
+                )
+
+        # 3. Выравнивание содержимого по левому краю
+        if role == Qt.ItemDataRole.TextAlignmentRole:
+            return int(Qt.AlignmentFlag.AlignLeft | Qt.AlignmentFlag.AlignVCenter)
 
         # 3. Статус проверки
         if role == STATUS_ROLE:

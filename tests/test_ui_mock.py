@@ -154,7 +154,8 @@ def test_main_window_integration(qapp: QApplication) -> None:
     """Проверка инициализации и интеграции компонентов MainWindow."""
     window = MainWindow()
 
-    assert window._summary_bar.isHidden()
+    assert not window._summary_bar.isHidden()
+    assert "Ожидание документов" in window._summary_bar._status_badge.text()
     assert not window._doc_slots.has_both_files()
 
     # Загрузка сценария через выбор демо-сценария
@@ -181,6 +182,7 @@ def test_main_window_integration(qapp: QApplication) -> None:
     assert not window._doc_slots.has_both_files()
     assert not window._order_drop_zone.has_file()
     assert not window._waybill_drop_zone.has_file()
-    assert window._summary_bar.isHidden()
+    assert not window._summary_bar.isHidden()
+    assert "Ожидание документов" in window._summary_bar._status_badge.text()
 
     window.close()

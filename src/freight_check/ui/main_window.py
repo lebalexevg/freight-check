@@ -1,23 +1,23 @@
 """Главное окно приложения «Рейс-Проверка» (PySide6) в концепции «Инженерный минимализм».
 
-Организовано в 4 компактных функциональных уровня:
-1. Компактный верхний тулбар (38px): лаконичный бренд, меню [Демо-сценарии ▾] (Ctrl+D), сброс [Очистить всё] (Ctrl+R).
-2. Адаптивная зона документов: 2 DnD карточки в Empty State / узкая сплит-панель (38px) в Loaded State.
-3. Единая инфо-полоса сводки (36px): бейдж статуса, точки-счетчики и переключатель [☐ Только расхождения].
-4. Таблица сопоставления QTableView: ~80% высоты, посимвольная diff-подсветка, double-click copy.
+Организовано в плоскую компоновку системного уровня:
+1. Заголовок окна ОС: «Рейс-Проверка — Кросс-валидация документов».
+2. Адаптивная сплит-панель документов (Empty State vs Loaded State 36px):
+   префиксы «Заявка:» / «ЭТрН:», плоские компактные кнопки управления.
+3. Командная строка сводки (36px): текстовый индикатор согласованности,
+   числовые метрики через «|», чекбокс «Только расхождения», меню «Демо-сценарии» и «Очистить всё».
+4. Таблица сопоставления QTableView: динамическое растягивание колонок документов (50/50),
+   посимвольная diff-подсветка, double-click copy, elided-текст и тултипы.
 5. Системный статус-бар: уведомления копирования, тонкий прогресс-бар и метрики производительности.
 """
 
 from pathlib import Path
 
-from PySide6.QtCore import QSize, Qt
-from PySide6.QtGui import QAction, QColor, QKeySequence, QShortcut
+from PySide6.QtGui import QKeySequence, QShortcut
 from PySide6.QtWidgets import (
-    QFrame,
-    QHBoxLayout,
+    QCheckBox,
     QLabel,
     QMainWindow,
-    QMenu,
     QMessageBox,
     QProgressBar,
     QPushButton,
@@ -29,11 +29,6 @@ from PySide6.QtWidgets import (
 from freight_check.contracts import SessionReport
 from freight_check.ui.diff_table import DiffTableWidget
 from freight_check.ui.drop_zone import DocumentSlotsWidget, DropZoneWidget
-from freight_check.ui.icons import (
-    GLYPH_PLAY,
-    GLYPH_TRASH,
-    create_segoe_icon,
-)
 from freight_check.ui.mock_data import get_all_scenarios
 from freight_check.ui.summary_bar import SummaryBarWidget
 from freight_check.ui.worker import ValidationWorker
@@ -55,7 +50,7 @@ class MainWindow(QMainWindow):
 
     def __init__(self) -> None:
         super().__init__()
-        self.setWindowTitle("Рейс-Проверка — Автономная кросс-валидация документов")
+        self.setWindowTitle("Рейс-Проверка — Кросс-валидация документов")
         self.resize(1140, 840)
         self.setMinimumSize(960, 640)
 
@@ -76,93 +71,26 @@ class MainWindow(QMainWindow):
         root_layout.setContentsMargins(16, 12, 16, 12)
         root_layout.setSpacing(10)
 
-        # 1. Компактный верхний тулбар (38px)
-        toolbar_frame = self._create_toolbar()
-        root_layout.addWidget(toolbar_frame)
-
-        # 2. Адаптивная зона документов (Empty State vs Loaded State 38px)
+        # 1. Адаптивная сплит-панель документов (Empty State vs Loaded State 36px)
         self._doc_slots = DocumentSlotsWidget(self)
         self._doc_slots.files_ready.connect(self._on_files_ready)
         self._doc_slots.files_changed.connect(self._on_files_changed)
         root_layout.addWidget(self._doc_slots)
 
-        # 3. Единая инфо-полоса сводки (36px)
+        # 2. Плоская командная строка сводки и управления (36px, всегда видна)
         self._summary_bar = SummaryBarWidget(self)
+        self._summary_bar.setup_scenarios(self._scenarios, self._on_scenario_selected)
+        self._summary_bar.reset_requested.connect(self._reset_all)
         self._summary_bar.filter_only_diffs_changed.connect(self._diff_table_filter_changed)
-        self._summary_bar.setVisible(False)
         root_layout.addWidget(self._summary_bar)
 
-        # 4. Таблица сопоставления расхождений (~80% высоты окна)
+        # 3. Таблица сопоставления расхождений (~80% высоты окна)
         self._diff_table = DiffTableWidget(self)
         self._diff_table.value_copied.connect(self._on_value_copied)
         root_layout.addWidget(self._diff_table, stretch=1)
 
-        # 5. Системный статус-бар
+        # 4. Системный статус-бар
         self._setup_status_bar()
-
-    def _create_toolbar(self) -> QFrame:
-        """Создает ультракомпактный верхний тулбар вместо громоздкой шапки."""
-        frame = QFrame()
-        frame.setObjectName("topToolbar")
-        frame.setFixedHeight(40)
-        layout = QHBoxLayout(frame)
-        layout.setContentsMargins(12, 6, 12, 6)
-        layout.setSpacing(12)
-
-        # Название продукта и бейдж офлайн-режима
-        brand_layout = QHBoxLayout()
-        brand_layout.setSpacing(8)
-
-        title_label = QLabel("РЕЙС-ПРОВЕРКА")
-        title_label.setStyleSheet(
-            "font-size: 13px; font-weight: 800; color: #0F172A; letter-spacing: 0.5px;"
-        )
-        brand_layout.addWidget(title_label)
-
-        offline_badge = QLabel("152-ФЗ Offline")
-        offline_badge.setStyleSheet(
-            "font-size: 10px; font-weight: 600; color: #047857; "
-            "background-color: #D1FAE5; border-radius: 3px; padding: 1px 5px;"
-        )
-        brand_layout.addWidget(offline_badge)
-        layout.addLayout(brand_layout)
-
-        layout.addStretch(1)
-
-        # Меню тестовых демо-сценариев с векторной Segoe иконкой
-        self._demo_menu_btn = QToolButton(self)
-        self._demo_menu_btn.setObjectName("demoMenuBtn")
-        self._demo_menu_btn.setText("Демо-сценарии ▾")
-        self._demo_menu_btn.setIcon(
-            create_segoe_icon(GLYPH_PLAY, QColor("#334155"), 12, y_offset=1.0)
-        )
-        self._demo_menu_btn.setIconSize(QSize(12, 12))
-        self._demo_menu_btn.setToolButtonStyle(Qt.ToolButtonStyle.ToolButtonTextBesideIcon)
-        self._demo_menu_btn.setToolTip("Выбрать эталонный тестовый сценарий (Ctrl+D)")
-        self._demo_menu_btn.setPopupMode(QToolButton.ToolButtonPopupMode.InstantPopup)
-        self._demo_menu_btn.setFixedHeight(28)
-        self._demo_menu_btn.setCursor(Qt.CursorShape.PointingHandCursor)
-
-        demo_menu = QMenu(self._demo_menu_btn)
-        for key in self._scenarios:
-            action = QAction(key, self)
-            action.triggered.connect(lambda checked=False, k=key: self._on_scenario_selected(k))
-            demo_menu.addAction(action)
-        self._demo_menu_btn.setMenu(demo_menu)
-        layout.addWidget(self._demo_menu_btn)
-
-        # Кнопка сброса сессии с векторной Segoe иконкой
-        self._reset_btn = QPushButton("Очистить всё")
-        self._reset_btn.setObjectName("toolbarResetBtn")
-        self._reset_btn.setIcon(create_segoe_icon(GLYPH_TRASH, QColor("#64748B"), 12, y_offset=1.0))
-        self._reset_btn.setIconSize(QSize(12, 12))
-        self._reset_btn.setToolTip("Сбросить сессию и очистить файлы (Ctrl+R)")
-        self._reset_btn.setFixedHeight(28)
-        self._reset_btn.setCursor(Qt.CursorShape.PointingHandCursor)
-        self._reset_btn.clicked.connect(self._reset_all)
-        layout.addWidget(self._reset_btn)
-
-        return frame
 
     def _setup_status_bar(self) -> None:
         """Настраивает системный статус-бар со строго симметричными отступами."""
@@ -197,9 +125,9 @@ class MainWindow(QMainWindow):
 
     def _setup_shortcuts(self) -> None:
         """Настраивает глобальные горячие клавиши интерфейса."""
-        # Ctrl+D: открыть меню демо-сценариев
+        # Ctrl+D: открыть меню демо-сценариев в командной строке сводки
         self._demo_shortcut = QShortcut(QKeySequence("Ctrl+D"), self)
-        self._demo_shortcut.activated.connect(self._demo_menu_btn.showMenu)
+        self._demo_shortcut.activated.connect(self._summary_bar.show_demo_menu)
 
         # Ctrl+R: сбросить всё
         self._reset_shortcut = QShortcut(QKeySequence("Ctrl+R"), self)
@@ -219,7 +147,7 @@ class MainWindow(QMainWindow):
     def _on_files_changed(self) -> None:
         """Обработка изменения файлов в слотах."""
         if not self._doc_slots.has_both_files():
-            self._summary_bar.setVisible(False)
+            self._summary_bar.reset()
             self._diff_table.clear()
             self._status_text.setText("Прикрепите второй документ для запуска валидации")
 
@@ -295,9 +223,9 @@ class MainWindow(QMainWindow):
 
     def _on_value_copied(self, text: str) -> None:
         """Отображает временное уведомление в статус-баре при копировании реквизита."""
-        statusBar = self.statusBar()
-        if statusBar:
-            statusBar.showMessage(f"Скопировано в буфер: «{text}»", 3000)
+        status_bar = self.statusBar()
+        if status_bar:
+            status_bar.showMessage(f"Скопировано в буфер: «{text}»", 3000)
 
     def _reset_all(self) -> None:
         """Полный сброс состояния интерфейса."""
@@ -307,7 +235,6 @@ class MainWindow(QMainWindow):
 
         self._doc_slots.clear_all()
         self._summary_bar.reset()
-        self._summary_bar.setVisible(False)
         self._diff_table.clear()
         self._progress_bar.setVisible(False)
         self._current_report = None
@@ -315,7 +242,19 @@ class MainWindow(QMainWindow):
         self._metrics_label.setText("Проверено: 0  │  Время: 0 мс")
         self._status_text.setText("Прикрепите документы или выберите демо-сценарий (Ctrl+D)")
 
-    # Свойства обратной совместимости для старых тестов
+    # Свойства обратной совместимости
+    @property
+    def _demo_menu_btn(self) -> QToolButton:
+        return self._summary_bar._demo_menu_btn
+
+    @property
+    def _reset_btn(self) -> QPushButton:
+        return self._summary_bar._reset_btn
+
+    @property
+    def _only_diffs_cb(self) -> QCheckBox:
+        return self._summary_bar._only_diffs_cb
+
     @property
     def _order_drop_zone(self) -> DropZoneWidget:
         return self._doc_slots._order_slot

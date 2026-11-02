@@ -16,20 +16,13 @@ QWidget {
     color: #0F172A;
 }
 
-/* 1. Верхний компактный тулбар */
-QFrame#topToolbar {
-    background-color: #FFFFFF;
-    border: 1px solid #E2E8F0;
-    border-radius: 6px;
-}
-
 QToolButton#demoMenuBtn {
     background-color: #FFFFFF;
     color: #334155;
     border: 1px solid #CBD5E1;
-    border-radius: 5px;
+    border-radius: 3px;
     padding: 2px 10px;
-    font-weight: 600;
+    font-weight: 500;
     font-size: 12px;
     qproperty-iconSize: 12px 12px;
 }
@@ -45,10 +38,10 @@ QToolButton#demoMenuBtn:pressed {
 }
 
 QPushButton#toolbarResetBtn {
-    background-color: #F8FAFC;
+    background-color: #FFFFFF;
     color: #64748B;
-    border: 1px solid #E2E8F0;
-    border-radius: 5px;
+    border: 1px solid #CBD5E1;
+    border-radius: 3px;
     padding: 2px 10px;
     font-weight: 500;
     font-size: 12px;
@@ -85,7 +78,7 @@ QMenu::item:selected {
 QFrame#dropZone {
     background-color: #FFFFFF;
     border: 1px dashed #CBD5E1;
-    border-radius: 6px;
+    border-radius: 4px;
 }
 
 QFrame#dropZone:hover {
@@ -100,16 +93,17 @@ QFrame#dropZone[dragOver="true"] {
 }
 
 QFrame#dropZone[hasFile="true"] {
-    border: 1px solid #CBD5E1;
+    border: 1px solid #E2E8F0;
+    border-radius: 4px;
     background-color: #FFFFFF;
 }
 
-/* Кнопки внутри компактного слота документов */
+/* Кнопки внутри компактного слота документов (строгие, плоские) */
 QPushButton#compactActionBtn {
-    background-color: #F8FAFC;
+    background-color: #FFFFFF;
     color: #475569;
-    border: 1px solid #E2E8F0;
-    border-radius: 4px;
+    border: 1px solid #CBD5E1;
+    border-radius: 3px;
     padding: 2px 8px;
     font-size: 11px;
     font-weight: 500;
@@ -117,29 +111,30 @@ QPushButton#compactActionBtn {
 }
 
 QPushButton#compactActionBtn:hover {
-    background-color: #F1F5F9;
-    border-color: #CBD5E1;
+    background-color: #F8FAFC;
+    border-color: #94A3B8;
     color: #0F172A;
 }
 
 QPushButton#compactClearBtn {
-    background-color: transparent;
-    border: none;
-    border-radius: 4px;
+    background-color: #FFFFFF;
+    border: 1px solid #CBD5E1;
+    border-radius: 3px;
     padding: 0px;
     margin: 0px;
-    qproperty-iconSize: 14px 14px;
+    qproperty-iconSize: 12px 12px;
 }
 
 QPushButton#compactClearBtn:hover {
     background-color: #FEE2E2;
+    border-color: #FCA5A5;
 }
 
 /* 3. Инфо-полоса сводки */
 QFrame#summaryBar {
     background-color: #FFFFFF;
     border: 1px solid #E2E8F0;
-    border-radius: 6px;
+    border-radius: 4px;
 }
 
 /* Чекбокс фильтрации расхождений с четкой иконкой */
@@ -224,7 +219,8 @@ QHeaderView {
 QHeaderView::section {
     background-color: #F8FAFC;
     color: #475569;
-    padding: 4px 10px;
+    text-align: left;
+    padding: 4px 8px 4px 12px;
     font-weight: 600;
     font-size: 12px;
     border: none;
@@ -232,16 +228,10 @@ QHeaderView::section {
     border-right: 1px solid #F1F5F9;
 }
 
-QHeaderView::up-arrow {
-    width: 9px;
-    height: 9px;
-    padding-right: 6px;
-}
-
-QHeaderView::down-arrow {
-    width: 9px;
-    height: 9px;
-    padding-right: 6px;
+QHeaderView::up-arrow, QHeaderView::down-arrow {
+    image: none;
+    width: 0px;
+    height: 0px;
 }
 
 /* 5. Полоса прокрутки (минималистичный QScrollBar) */

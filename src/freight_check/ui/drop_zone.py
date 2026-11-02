@@ -71,11 +71,13 @@ class DropZoneWidget(QFrame):
         self,
         title: str,
         subtitle: str,
+        role_prefix: str = "Заявка:",
         parent: QWidget | None = None,
     ) -> None:
         super().__init__(parent)
         self._title = title
         self._subtitle = subtitle
+        self._role_prefix = role_prefix
         self._file_path: str | None = None
         self._is_compact: bool = False
 
@@ -125,47 +127,47 @@ class DropZoneWidget(QFrame):
         # 2. Компактный однострочный вид (Compact / Loaded State)
         self._compact_widget = QWidget()
         compact_layout = QHBoxLayout(self._compact_widget)
-        compact_layout.setContentsMargins(12, 6, 12, 6)
+        compact_layout.setContentsMargins(12, 0, 12, 0)
+        compact_layout.setAlignment(Qt.AlignmentFlag.AlignVCenter)
         compact_layout.setSpacing(8)
 
-        # Форматный бейдж (компактный 20px тег, идеально парящий по центру)
-        self._compact_badge = QLabel("DOC")
-        self._compact_badge.setObjectName("formatBadge")
-        self._compact_badge.setFixedHeight(20)
-        self._compact_badge.setAlignment(Qt.AlignmentFlag.AlignCenter)
-        self._compact_badge.setStyleSheet(
-            "background-color: #E2E8F0; color: #334155; font-size: 10px; "
-            "font-weight: 700; border-radius: 4px; padding: 0px 6px;"
-        )
-        compact_layout.addWidget(self._compact_badge)
+        # Текстовый префикс роли слота («Заявка:» или «ЭТрН:»)
+        self._role_label = QLabel(self._role_prefix)
+        self._role_label.setObjectName("slotRoleLabel")
+        self._role_label.setStyleSheet("color: #64748B; font-size: 12px; font-weight: 500;")
+        compact_layout.addWidget(self._role_label)
 
         # Имя файла и размер
         self._compact_name_label = QLabel()
         self._compact_name_label.setStyleSheet("font-size: 12px; font-weight: 600; color: #0F172A;")
         compact_layout.addWidget(self._compact_name_label, stretch=1)
 
-        # Кнопка замены с векторной иконкой Segoe (выровненной по центральной оси текста)
+        # Кнопка замены: плоская и компактная
         self._replace_button = QPushButton("Заменить")
         self._replace_button.setObjectName("compactActionBtn")
         self._replace_button.setIcon(
             create_segoe_icon(GLYPH_REFRESH, QColor("#475569"), 12, y_offset=1.0)
         )
         self._replace_button.setIconSize(QSize(12, 12))
-        self._replace_button.setFixedHeight(26)
+        self._replace_button.setFixedHeight(24)
         self._replace_button.setCursor(Qt.CursorShape.PointingHandCursor)
         self._replace_button.clicked.connect(self._on_browse_clicked)
         compact_layout.addWidget(self._replace_button)
 
-        # Кнопка удаления с математически центрированной векторной иконкой Segoe
+        # Кнопка удаления: плоская и компактная
         self._clear_button = QPushButton()
         self._clear_button.setObjectName("compactClearBtn")
-        self._clear_button.setIcon(create_segoe_icon(GLYPH_CLOSE, QColor("#64748B"), 14))
-        self._clear_button.setIconSize(QSize(14, 14))
+        self._clear_button.setIcon(create_segoe_icon(GLYPH_CLOSE, QColor("#64748B"), 12))
+        self._clear_button.setIconSize(QSize(12, 12))
         self._clear_button.setToolTip("Удалить файл")
-        self._clear_button.setFixedSize(26, 26)
+        self._clear_button.setFixedSize(24, 24)
         self._clear_button.setCursor(Qt.CursorShape.PointingHandCursor)
         self._clear_button.clicked.connect(self.clear_file)
         compact_layout.addWidget(self._clear_button)
+
+        # Сохраняем скрытую ссылку для обратной совместимости
+        self._compact_badge = QLabel()
+        self._compact_badge.setVisible(False)
 
         self._stacked_layout.addWidget(self._compact_widget)
 
@@ -176,7 +178,7 @@ class DropZoneWidget(QFrame):
             self._compact_widget if compact else self._expanded_widget
         )
         if compact:
-            self.setFixedHeight(40)
+            self.setFixedHeight(36)
         else:
             self.setMinimumHeight(96)
             self.setMaximumHeight(116)
@@ -297,6 +299,7 @@ class DocumentSlotsWidget(QWidget):
         self._order_slot = DropZoneWidget(
             title="1. Заявка на перевозку",
             subtitle="Входящая заявка заказчика (PDF, Excel, Word, скан)",
+            role_prefix="Заявка:",
             parent=self,
         )
         self._order_slot.file_selected.connect(self._on_slot_changed)
@@ -306,6 +309,7 @@ class DocumentSlotsWidget(QWidget):
         self._waybill_slot = DropZoneWidget(
             title="2. Черновик ЭТрН / Накладная",
             subtitle="Проект накладной (XML титул ФНС, скан, PDF)",
+            role_prefix="ЭТрН:",
             parent=self,
         )
         self._waybill_slot.file_selected.connect(self._on_slot_changed)
@@ -327,6 +331,9 @@ class DocumentSlotsWidget(QWidget):
     def _update_presentation_mode(self) -> None:
         """Переключает слоты в компактный вид при заполнении обоих файлов."""
         has_both = self.has_both_files()
+        layout = self.layout()
+        if isinstance(layout, QHBoxLayout):
+            layout.setSpacing(10)
         self._order_slot.set_compact_mode(has_both)
         self._waybill_slot.set_compact_mode(has_both)
 

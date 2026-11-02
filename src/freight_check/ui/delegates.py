@@ -107,17 +107,24 @@ class ParameterColumnDelegate(QStyledItemDelegate):
             if isinstance(bg_color, QColor):
                 painter.fillRect(rect, bg_color)
 
-        # 2. Левый цветной акцентный маркер (4px)
-        marker_color = COLOR_MATCH_MARKER
-        if status == ValidationStatus.CRITICAL:
-            marker_color = COLOR_CRITICAL_MARKER
-        elif status == ValidationStatus.WARNING:
-            marker_color = COLOR_WARNING_MARKER
-        elif status == ValidationStatus.UNCERTAIN:
-            marker_color = COLOR_UNCERTAIN_MARKER
+        # 2. Левый цветной акцентный маркер (4px) ТОЛЬКО для строк с расхождениями
+        if status in (
+            ValidationStatus.CRITICAL,
+            ValidationStatus.WARNING,
+            ValidationStatus.UNCERTAIN,
+        ):
+            if status == ValidationStatus.CRITICAL:
+                marker_color = COLOR_CRITICAL_MARKER
+            elif status == ValidationStatus.WARNING:
+                marker_color = COLOR_WARNING_MARKER
+            else:
+                marker_color = COLOR_UNCERTAIN_MARKER
 
-        marker_rect = QRect(rect.left(), rect.top(), 4, rect.height())
-        painter.fillRect(marker_rect, marker_color)
+            marker_rect = QRect(rect.left(), rect.top(), 4, rect.height())
+            painter.fillRect(marker_rect, marker_color)
+        else:
+            # Для MATCH левый маркер не рисуем — оставляем спокойную строку
+            marker_color = COLOR_MATCH_MARKER
 
         # 3. Иконка / глиф статуса (Segoe Fluent Icons с TextAntialiasing)
         glyph = STATUS_GLYPHS.get(status, GLYPH_CHECK)
@@ -128,7 +135,7 @@ class ParameterColumnDelegate(QStyledItemDelegate):
         glyph_rect = QRect(rect.left() + 9, rect.top(), 18, rect.height())
         painter.drawText(glyph_rect, int(Qt.AlignmentFlag.AlignCenter), glyph)
 
-        # 4. Текст названия параметра
+        # 4. Текст названия параметра с защитой от переполнения (ElideRight)
         text_font = QFont(option.font)
         text_font.setFamilies(["Segoe UI Variable Text", "Segoe UI", "Inter", "sans-serif"])
         if status in (ValidationStatus.CRITICAL, ValidationStatus.WARNING):
@@ -148,10 +155,12 @@ class ParameterColumnDelegate(QStyledItemDelegate):
             rect.width() - 36,
             rect.height(),
         )
+        fm = QFontMetrics(text_font)
+        elided_text = fm.elidedText(text, Qt.TextElideMode.ElideRight, text_rect.width())
         painter.drawText(
             text_rect,
             int(Qt.AlignmentFlag.AlignVCenter | Qt.AlignmentFlag.AlignLeft),
-            text,
+            elided_text,
         )
 
         painter.restore()
@@ -218,10 +227,14 @@ class DiffHighlightDelegate(QStyledItemDelegate):
                 rect.width() - 20,
                 rect.height(),
             )
+            fm = QFontMetrics(base_font)
+            elided_full = fm.elidedText(
+                full_text, Qt.TextElideMode.ElideRight, content_rect.width()
+            )
             painter.drawText(
                 content_rect,
                 int(Qt.AlignmentFlag.AlignVCenter | Qt.AlignmentFlag.AlignLeft),
-                full_text,
+                elided_full,
             )
             painter.restore()
             return
@@ -335,10 +348,12 @@ class ExplanationColumnDelegate(QStyledItemDelegate):
 
         painter.setFont(font)
         text_rect = QRect(rect.left() + 10, rect.top(), rect.width() - 20, rect.height())
+        fm = QFontMetrics(font)
+        elided_exp = fm.elidedText(text, Qt.TextElideMode.ElideRight, text_rect.width())
         painter.drawText(
             text_rect,
             int(Qt.AlignmentFlag.AlignVCenter | Qt.AlignmentFlag.AlignLeft),
-            text,
+            elided_exp,
         )
 
         painter.restore()

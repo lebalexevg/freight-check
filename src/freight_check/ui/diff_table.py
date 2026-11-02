@@ -95,27 +95,30 @@ class DiffTableWidget(QWidget):
         self._table.verticalHeader().setVisible(False)
         self._table.setShowGrid(False)
         self._table.setWordWrap(False)
+        self._table.setTextElideMode(Qt.TextElideMode.ElideRight)
 
         # Высота строк (34px) и заголовка (34px)
         self._table.verticalHeader().setDefaultSectionSize(34)
         header = self._table.horizontalHeader()
         header.setFixedHeight(34)
-        header.setSortIndicatorShown(True)
+        header.setSortIndicatorShown(False)
         header.setSectionsClickable(True)
 
         # Белый фон для всей области таблицы (исключает черные артефакты в темной теме ОС)
         self._table.setStyleSheet("background-color: #FFFFFF;")
         self._table.viewport().setStyleSheet("background-color: #FFFFFF;")
 
-        # Пропорции 4 колонок
-        header.setSectionResizeMode(0, QHeaderView.ResizeMode.Interactive)
-        header.setSectionResizeMode(1, QHeaderView.ResizeMode.Interactive)
-        header.setSectionResizeMode(2, QHeaderView.ResizeMode.Interactive)
-        header.setSectionResizeMode(3, QHeaderView.ResizeMode.Stretch)
+        # Интерактивное изменение ширины для всех 4 колонок (без горизонтального скролла)
+        for i in range(4):
+            header.setSectionResizeMode(i, QHeaderView.ResizeMode.Interactive)
 
-        self._table.setColumnWidth(0, 210)
-        self._table.setColumnWidth(1, 230)
-        self._table.setColumnWidth(2, 230)
+        header.setStretchLastSection(True)
+        self._table.setHorizontalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
+
+        self._table.setColumnWidth(0, 180)
+        self._table.setColumnWidth(1, 260)
+        self._table.setColumnWidth(2, 260)
+        self._table.setColumnWidth(3, 380)
 
         # Двойной клик для копирования реквизита в буфер обмена
         self._table.doubleClicked.connect(self._on_cell_double_clicked)

@@ -213,12 +213,12 @@ def test_document_slots_widget_state_transitions(qapp: QApplication) -> None:
     assert slots._order_slot._is_compact is False
     assert len(ready_signals) == 0
 
-    # Выбираем накладную -> оба файла есть -> автосворачивание в компактный вид (40px)
+    # Выбираем накладную -> оба файла есть -> автосворачивание в компактный вид (36px)
     slots._waybill_slot.set_file("waybill.xml")
     assert slots.has_both_files()
     assert slots._order_slot._is_compact is True
     assert slots._waybill_slot._is_compact is True
-    assert slots._order_slot.height() == 40
+    assert slots._order_slot.height() == 36
     assert len(ready_signals) == 1
     assert ready_signals[0] == (slots.get_order_path(), slots.get_waybill_path())
 
@@ -238,10 +238,11 @@ def test_document_slots_widget_state_transitions(qapp: QApplication) -> None:
 
 
 def test_summary_bar_widget(qapp: QApplication) -> None:
-    """Проверка 40px инфо-полосы сводки и переключателя 'Только расхождения'."""
+    """Проверка 36px инфо-полосы сводки и переключателя 'Только расхождения'."""
     bar = SummaryBarWidget()
-    assert bar.height() == 40
+    assert bar.height() == 36
     assert not bar.is_only_diffs_checked()
+    assert "Ожидание документов" in bar._status_badge.text()
 
     report = SessionReport(
         overall_status=ValidationStatus.CRITICAL,
@@ -257,10 +258,11 @@ def test_summary_bar_widget(qapp: QApplication) -> None:
     )
 
     bar.set_report(report)
-    assert "● КРИТИЧЕСКИЕ РАСХОЖДЕНИЯ" in bar._status_badge.text()
-    assert "● 2 критических" in bar._critical_label.text()
-    assert "● 1 предупреждений" in bar._warning_label.text()
-    assert "● 1 совпадений" in bar._match_label.text()
+    assert "Найдены расхождения" in bar._status_badge.text()
+    assert not bar._status_icon.isHidden()
+    assert "Критических: 2" in bar._critical_label.text()
+    assert "Предупреждений: 1" in bar._warning_label.text()
+    assert "Совпадений: 1" in bar._match_label.text()
 
     # Проверка сигнала фильтрации
     diff_filter_events: list[bool] = []
@@ -272,4 +274,5 @@ def test_summary_bar_widget(qapp: QApplication) -> None:
 
     bar.reset()
     assert not bar.is_only_diffs_checked()
-    assert "ОЖИДАНИЕ" in bar._status_badge.text()
+    assert bar._status_icon.isHidden()
+    assert "Ожидание документов" in bar._status_badge.text()
