@@ -1,6 +1,7 @@
 """Тесты для компонентов графического интерфейса и моковых данных."""
 
-from PySide6.QtWidgets import QApplication
+import pytest
+from PySide6.QtWidgets import QApplication, QLabel, QPushButton
 
 from freight_check.contracts import SessionReport, ValidationStatus
 from freight_check.ui.diff_table import DiffTableWidget
@@ -189,5 +190,62 @@ def test_main_window_integration(qapp: QApplication) -> None:
     assert window._diff_table.isHidden()
     assert not window._summary_bar.isHidden()
     assert "Ожидание документов" in window._summary_bar._status_badge.text()
+
+    window.close()
+
+
+def test_about_dialog(qapp: QApplication) -> None:
+    """Проверка модального диалога «О программе» и элементов интерфейса."""
+    from freight_check.ui.about_dialog import APP_NAME, APP_VERSION, AboutDialog
+
+    dialog = AboutDialog()
+    assert APP_NAME in dialog.windowTitle()
+    assert dialog.isModal()
+
+    # Проверяем наличие версии
+    badges = [child for child in dialog.findChildren(QLabel) if f"v{APP_VERSION}" in child.text()]
+    assert len(badges) >= 1
+
+    # Проверяем кнопку закрытия
+    close_btn = dialog.findChild(QPushButton, "aboutCloseBtn")
+    assert close_btn is not None
+    assert close_btn.text() == "Понятно"
+    dialog.accept()
+    dialog.close()
+
+
+def test_main_window_about_triggers(qapp: QApplication, monkeypatch: pytest.MonkeyPatch) -> None:
+    """Проверка точек вызова окна «О программе» (тулбар, статус-бар, F1)."""
+    from freight_check.ui.about_dialog import APP_VERSION
+
+    window = MainWindow()
+
+    # 1. Кнопка справки в SummaryBar
+    assert window._about_btn is not None
+    assert window._about_btn.toolTip() == "О программе и справка (F1)"
+
+    # 2. Кнопка версии в статус-баре
+    assert window._version_btn is not None
+    assert window._version_btn.text() == f"v{APP_VERSION}"
+
+    # 3. Шорткат F1
+    assert window._about_shortcut is not None
+    assert window._about_shortcut.key().toString() == "F1"
+
+    # Мокаем _show_about_dialog, чтобы не открывать блокирующий QDialog.exec()
+    about_called: list[bool] = []
+    monkeypatch.setattr(window, "_show_about_dialog", lambda: about_called.append(True))
+
+    # Клик по кнопке на панели инструментов
+    window._about_btn.click()
+    assert len(about_called) == 1
+
+    # Клик по кнопке версии в статус-баре
+    window._version_btn.click()
+    assert len(about_called) == 2
+
+    # Активация шортката F1
+    window._about_shortcut.activated.emit()
+    assert len(about_called) == 3
 
     window.close()

@@ -12,6 +12,10 @@ QMainWindow, QDialog {
     font-size: 12px;
 }
 
+QDialog#aboutDialog {
+    background-color: #FFFFFF;
+}
+
 QWidget {
     color: #0F172A;
 }
@@ -52,6 +56,29 @@ QPushButton#toolbarResetBtn:hover {
     color: #0F172A;
     background-color: #F8FAFC;
     border-color: #64748B;
+}
+
+QPushButton#toolbarResetBtn:pressed {
+    background-color: #E2E8F0;
+}
+
+QPushButton#toolbarHelpBtn {
+    background-color: #FFFFFF;
+    color: #475569;
+    border: 1px solid #94A3B8;
+    border-radius: 2px;
+    padding: 0px;
+    qproperty-iconSize: 13px 13px;
+}
+
+QPushButton#toolbarHelpBtn:hover {
+    color: #0F172A;
+    background-color: #F8FAFC;
+    border-color: #64748B;
+}
+
+QPushButton#toolbarHelpBtn:pressed {
+    background-color: #E2E8F0;
 }
 
 /* Выпадающие меню QMenu */
@@ -354,4 +381,44 @@ QProgressBar {
 QProgressBar::chunk {
     background-color: #2563EB;
     border-radius: 2px;
+}
+
+/* Кнопка версии в статус-баре */
+QPushButton#statusVersionBtn {
+    background-color: transparent;
+    color: #64748B;
+    border: none;
+    font-size: 11px;
+    font-weight: 500;
+    padding: 2px 6px;
+    border-radius: 2px;
+}
+
+QPushButton#statusVersionBtn:hover {
+    color: #0F172A;
+    background-color: #E2E8F0;
+}
+
+QPushButton#statusVersionBtn:pressed {
+    background-color: #CBD5E1;
+}
+
+/* Кнопка закрытия модального окна «О программе» (стандартный системный стиль) */
+QPushButton#aboutCloseBtn {
+    background-color: #FFFFFF;
+    color: #334155;
+    border: 1px solid #94A3B8;
+    border-radius: 2px;
+    font-weight: 500;
+    font-size: 12px;
+}
+
+QPushButton#aboutCloseBtn:hover {
+    color: #0F172A;
+    background-color: #F8FAFC;
+    border-color: #64748B;
+}
+
+QPushButton#aboutCloseBtn:pressed {
+    background-color: #E2E8F0;
 }

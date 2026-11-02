@@ -48,6 +48,7 @@ class SummaryBarWidget(QFrame):
     scenario_selected = Signal(str)
     reset_requested = Signal()
     filter_only_diffs_changed = Signal(bool)
+    about_requested = Signal()
 
     def __init__(self, parent: QWidget | None = None) -> None:
         super().__init__(parent)
@@ -137,6 +138,18 @@ class SummaryBarWidget(QFrame):
         self._reset_btn.setCursor(Qt.CursorShape.PointingHandCursor)
         self._reset_btn.clicked.connect(self.reset_requested.emit)
         layout.addWidget(self._reset_btn)
+
+        # Кнопка сведений о программе
+        self._about_btn = QPushButton(self)
+        self._about_btn.setObjectName("toolbarHelpBtn")
+        self._about_btn.setIcon(create_segoe_icon(GLYPH_HELP, QColor("#475569"), 13, y_offset=0.5))
+        self._about_btn.setIconSize(QSize(13, 13))
+        self._about_btn.setToolTip("О программе и справка (F1)")
+        self._about_btn.setFixedHeight(30)
+        self._about_btn.setFixedWidth(30)
+        self._about_btn.setCursor(Qt.CursorShape.PointingHandCursor)
+        self._about_btn.clicked.connect(self.about_requested.emit)
+        layout.addWidget(self._about_btn)
 
     def setup_scenarios(self, scenarios: Iterable[str], callback: Any) -> None:
         """Настраивает выпадающее меню эталонных сценариев."""

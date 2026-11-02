@@ -13,10 +13,12 @@
 
 from pathlib import Path
 
+from PySide6.QtCore import Qt
 from PySide6.QtGui import QKeySequence, QShortcut
 from PySide6.QtWidgets import (
     QApplication,
     QCheckBox,
+    QFrame,
     QLabel,
     QMainWindow,
     QMessageBox,
@@ -28,6 +30,7 @@ from PySide6.QtWidgets import (
 )
 
 from freight_check.contracts import SessionReport
+from freight_check.ui.about_dialog import APP_VERSION, AboutDialog
 from freight_check.ui.diff_table import DiffTableWidget
 from freight_check.ui.drop_zone import DocumentSlotsWidget, DropZoneWidget
 from freight_check.ui.mock_data import get_all_scenarios
@@ -80,6 +83,7 @@ class MainWindow(QMainWindow):
         self._summary_bar.setup_scenarios(self._scenarios, self._on_scenario_selected)
         self._summary_bar.reset_requested.connect(self._reset_all)
         self._summary_bar.filter_only_diffs_changed.connect(self._diff_table_filter_changed)
+        self._summary_bar.about_requested.connect(self._show_about_dialog)
         root_layout.addWidget(self._summary_bar)
 
         # 2. Адаптивная сплит-панель документов (Empty State во весь экран vs Loaded State 48px)
@@ -128,6 +132,21 @@ class MainWindow(QMainWindow):
         self._metrics_label.setContentsMargins(0, 0, 0, 0)
         status_bar.addPermanentWidget(self._metrics_label)
 
+        # Тонкий разделитель перед версией
+        sep = QFrame()
+        sep.setFixedWidth(1)
+        sep.setFixedHeight(14)
+        sep.setStyleSheet("background-color: #CBD5E1;")
+        status_bar.addPermanentWidget(sep)
+
+        # Кликабельная кнопка версии для вызова окна «О программе»
+        self._version_btn = QPushButton(f"v{APP_VERSION}")
+        self._version_btn.setObjectName("statusVersionBtn")
+        self._version_btn.setCursor(Qt.CursorShape.PointingHandCursor)
+        self._version_btn.setToolTip("О программе и справка (F1)")
+        self._version_btn.clicked.connect(self._show_about_dialog)
+        status_bar.addPermanentWidget(self._version_btn)
+
     def _setup_shortcuts(self) -> None:
         """Настраивает глобальные горячие клавиши интерфейса."""
         # Ctrl+D: открыть меню демо-сценариев в командной строке сводки
@@ -137,6 +156,10 @@ class MainWindow(QMainWindow):
         # Ctrl+R: сбросить всё
         self._reset_shortcut = QShortcut(QKeySequence("Ctrl+R"), self)
         self._reset_shortcut.activated.connect(self._reset_all)
+
+        # F1: открыть окно «О программе»
+        self._about_shortcut = QShortcut(QKeySequence("F1"), self)
+        self._about_shortcut.activated.connect(self._show_about_dialog)
 
     def _apply_styles(self) -> None:
         """Загружает стили из style.qss."""
@@ -259,6 +282,11 @@ class MainWindow(QMainWindow):
         if status_bar:
             status_bar.showMessage(f"Скопировано в буфер: «{text}»", 3000)
 
+    def _show_about_dialog(self) -> None:
+        """Открывает модальное информационное окно «О программе»."""
+        dialog = AboutDialog(self)
+        dialog.exec()
+
     def _reset_all(self) -> None:
         """Полный сброс состояния интерфейса."""
         if self._worker is not None and self._worker.isRunning():
@@ -283,6 +311,10 @@ class MainWindow(QMainWindow):
     @property
     def _reset_btn(self) -> QPushButton:
         return self._summary_bar._reset_btn
+
+    @property
+    def _about_btn(self) -> QPushButton:
+        return self._summary_bar._about_btn
 
     @property
     def _only_diffs_cb(self) -> QCheckBox:
