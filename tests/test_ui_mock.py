@@ -94,35 +94,36 @@ def test_drop_zone_widget(qapp: QApplication) -> None:
 
 
 def test_diff_table_widget(qapp: QApplication) -> None:
-    """Проверка таблицы расхождений и фильтрации."""
+    """Проверка таблицы расхождений, фильтрации расхождений и копирования по двойному клику."""
     table = DiffTableWidget()
 
     # Заполнение строками сценария 3 (опечатки: 3 критических + совпадения)
     s3 = get_mock_scenario_3_typos()
     table.set_rows(s3.rows)
 
-    # Проверка отображения строк таблицы
-    assert table._table.rowCount() == len(s3.rows)
+    # Проверка отображения строк таблицы через модель
+    assert table.row_count() == len(s3.rows)
 
-    # Фильтрация только по критическим ошибкам
-    table._set_status_filter(ValidationStatus.CRITICAL)
-    assert table._table.rowCount() == 3
+    # Фильтрация «Только расхождения»
+    table.set_hide_matches(True)
+    assert table.row_count() == 3
 
-    # Фильтрация по совпадениям
-    table._set_status_filter(ValidationStatus.MATCH)
-    assert table._table.rowCount() == len(s3.rows) - 3
+    # Отключение фильтра
+    table.set_hide_matches(False)
+    assert table.row_count() == len(s3.rows)
 
-    # Сброс фильтра
-    table._set_status_filter(None)
-    assert table._table.rowCount() == len(s3.rows)
+    # Проверка двойного клика для копирования
+    copied_signals: list[str] = []
+    table.value_copied.connect(copied_signals.append)
 
-    # Поиск по подстроке
-    table._on_search_changed("паспорт")
-    assert table._table.rowCount() == 1
+    first_index = table._proxy_model.index(0, 1)
+    table._on_cell_double_clicked(first_index)
+    assert len(copied_signals) == 1
+    assert len(copied_signals[0]) > 0
 
     # Очистка таблицы
     table.clear()
-    assert len(table._current_rows) == 0
+    assert table.row_count() == 0
 
 
 def test_validation_worker_lifecycle(qapp: QApplication) -> None:
@@ -171,7 +172,7 @@ def test_main_window_integration(qapp: QApplication) -> None:
     # Проверяем, что отчет получен и UI обновился
     assert window._current_report is not None
     assert not window._kpi_banner.isHidden()
-    assert window._diff_table._table.rowCount() > 0
+    assert window._diff_table.row_count() > 0
 
     # Проверяем сброс всех данных
     window._reset_all()
