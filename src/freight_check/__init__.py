@@ -2,6 +2,7 @@
 
 import sys
 
+from PySide6.QtCore import Qt
 from PySide6.QtWidgets import QApplication
 
 from freight_check.ui.main_window import MainWindow
@@ -12,6 +13,9 @@ def main() -> None:
     app = QApplication.instance()
     is_new_app = False
     if not isinstance(app, QApplication):
+        QApplication.setHighDpiScaleFactorRoundingPolicy(
+            Qt.HighDpiScaleFactorRoundingPolicy.PassThrough
+        )
         app = QApplication(sys.argv)
         is_new_app = True
 

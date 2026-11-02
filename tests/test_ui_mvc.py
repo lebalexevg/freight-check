@@ -213,12 +213,12 @@ def test_document_slots_widget_state_transitions(qapp: QApplication) -> None:
     assert slots._order_slot._is_compact is False
     assert len(ready_signals) == 0
 
-    # Выбираем накладную -> оба файла есть -> автосворачивание в компактный вид (38px)
+    # Выбираем накладную -> оба файла есть -> автосворачивание в компактный вид (40px)
     slots._waybill_slot.set_file("waybill.xml")
     assert slots.has_both_files()
     assert slots._order_slot._is_compact is True
     assert slots._waybill_slot._is_compact is True
-    assert slots._order_slot.height() == 38
+    assert slots._order_slot.height() == 40
     assert len(ready_signals) == 1
     assert ready_signals[0] == (slots.get_order_path(), slots.get_waybill_path())
 
@@ -238,9 +238,9 @@ def test_document_slots_widget_state_transitions(qapp: QApplication) -> None:
 
 
 def test_summary_bar_widget(qapp: QApplication) -> None:
-    """Проверка 36px инфо-полосы сводки и переключателя 'Только расхождения'."""
+    """Проверка 40px инфо-полосы сводки и переключателя 'Только расхождения'."""
     bar = SummaryBarWidget()
-    assert bar.height() == 36
+    assert bar.height() == 40
     assert not bar.is_only_diffs_checked()
 
     report = SessionReport(

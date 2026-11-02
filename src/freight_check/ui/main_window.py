@@ -1,31 +1,46 @@
-"""Главное окно приложения «Рейс-Проверка» (PySide6)."""
+"""Главное окно приложения «Рейс-Проверка» (PySide6) в концепции «Инженерный минимализм».
+
+Организовано в 4 компактных функциональных уровня:
+1. Компактный верхний тулбар (38px): лаконичный бренд, меню [Демо-сценарии ▾] (Ctrl+D), сброс [Очистить всё] (Ctrl+R).
+2. Адаптивная зона документов: 2 DnD карточки в Empty State / узкая сплит-панель (38px) в Loaded State.
+3. Единая инфо-полоса сводки (36px): бейдж статуса, точки-счетчики и переключатель [☐ Только расхождения].
+4. Таблица сопоставления QTableView: ~80% высоты, посимвольная diff-подсветка, double-click copy.
+5. Системный статус-бар: уведомления копирования, тонкий прогресс-бар и метрики производительности.
+"""
 
 from pathlib import Path
 
-from PySide6.QtCore import Qt
+from PySide6.QtCore import QSize, Qt
+from PySide6.QtGui import QAction, QColor, QKeySequence, QShortcut
 from PySide6.QtWidgets import (
-    QComboBox,
     QFrame,
     QHBoxLayout,
     QLabel,
     QMainWindow,
+    QMenu,
     QMessageBox,
     QProgressBar,
     QPushButton,
+    QToolButton,
     QVBoxLayout,
     QWidget,
 )
 
-from freight_check.contracts import SessionReport, ValidationStatus
+from freight_check.contracts import SessionReport
 from freight_check.ui.diff_table import DiffTableWidget
-from freight_check.ui.drop_zone import DropZoneWidget
+from freight_check.ui.drop_zone import DocumentSlotsWidget, DropZoneWidget
+from freight_check.ui.icons import (
+    GLYPH_PLAY,
+    GLYPH_TRASH,
+    create_segoe_icon,
+)
 from freight_check.ui.mock_data import get_all_scenarios
+from freight_check.ui.summary_bar import SummaryBarWidget
 from freight_check.ui.worker import ValidationWorker
 
 
 def get_stylesheet_path() -> Path:
     """Определяет абсолютный путь к таблице стилей style.qss."""
-    # Поиск относительно пакета или корня проекта
     current_file = Path(__file__).resolve()
     # ../../../assets/styles/style.qss
     project_root = current_file.parents[3]
@@ -42,180 +57,153 @@ class MainWindow(QMainWindow):
         super().__init__()
         self.setWindowTitle("Рейс-Проверка — Автономная кросс-валидация документов")
         self.resize(1140, 840)
-        self.setMinimumSize(960, 680)
+        self.setMinimumSize(960, 640)
 
         self._scenarios = get_all_scenarios()
         self._worker: ValidationWorker | None = None
         self._current_report: SessionReport | None = None
+        self._selected_scenario_key: str | None = None
 
         self._setup_ui()
         self._apply_styles()
+        self._setup_shortcuts()
 
     def _setup_ui(self) -> None:
         central_widget = QWidget(self)
         self.setCentralWidget(central_widget)
 
         root_layout = QVBoxLayout(central_widget)
-        root_layout.setContentsMargins(20, 16, 20, 20)
-        root_layout.setSpacing(16)
+        root_layout.setContentsMargins(16, 12, 16, 12)
+        root_layout.setSpacing(10)
 
-        # 1. Шапка (Header) с логотипом и выбором демо-сценариев
-        header_frame = self._create_header_frame()
-        root_layout.addWidget(header_frame)
+        # 1. Компактный верхний тулбар (38px)
+        toolbar_frame = self._create_toolbar()
+        root_layout.addWidget(toolbar_frame)
 
-        # 2. Область Drag-and-Drop для двух документов
-        docs_layout = QHBoxLayout()
-        docs_layout.setSpacing(14)
+        # 2. Адаптивная зона документов (Empty State vs Loaded State 38px)
+        self._doc_slots = DocumentSlotsWidget(self)
+        self._doc_slots.files_ready.connect(self._on_files_ready)
+        self._doc_slots.files_changed.connect(self._on_files_changed)
+        root_layout.addWidget(self._doc_slots)
 
-        self._order_drop_zone = DropZoneWidget(
-            title="1. Заявка на перевозку",
-            subtitle="Перетащите входящую заявку клиента (PDF, Excel, Word, скан)",
-        )
-        self._order_drop_zone.file_selected.connect(self._on_files_changed)
-        self._order_drop_zone.file_cleared.connect(self._on_files_changed)
-        docs_layout.addWidget(self._order_drop_zone)
+        # 3. Единая инфо-полоса сводки (36px)
+        self._summary_bar = SummaryBarWidget(self)
+        self._summary_bar.filter_only_diffs_changed.connect(self._diff_table_filter_changed)
+        self._summary_bar.setVisible(False)
+        root_layout.addWidget(self._summary_bar)
 
-        self._waybill_drop_zone = DropZoneWidget(
-            title="2. Черновик ЭТрН / Накладная",
-            subtitle="Перетащите проект накладной (XML титул ФНС, скан, PDF)",
-        )
-        self._waybill_drop_zone.file_selected.connect(self._on_files_changed)
-        self._waybill_drop_zone.file_cleared.connect(self._on_files_changed)
-        docs_layout.addWidget(self._waybill_drop_zone)
-
-        root_layout.addLayout(docs_layout)
-
-        # 3. Панель действий и статус
-        actions_frame = self._create_actions_frame()
-        root_layout.addWidget(actions_frame)
-
-        # 4. Карточка сводки (KPI Banner)
-        self._kpi_banner = self._create_kpi_banner()
-        root_layout.addWidget(self._kpi_banner)
-        self._kpi_banner.setVisible(False)
-
-        # 5. Таблица сопоставления расхождений
-        self._diff_table = DiffTableWidget()
+        # 4. Таблица сопоставления расхождений (~80% высоты окна)
+        self._diff_table = DiffTableWidget(self)
+        self._diff_table.value_copied.connect(self._on_value_copied)
         root_layout.addWidget(self._diff_table, stretch=1)
 
-    def _create_header_frame(self) -> QFrame:
-        """Создает верхнюю панель с заголовком и демо-сценариями."""
+        # 5. Системный статус-бар
+        self._setup_status_bar()
+
+    def _create_toolbar(self) -> QFrame:
+        """Создает ультракомпактный верхний тулбар вместо громоздкой шапки."""
         frame = QFrame()
-        frame.setObjectName("headerFrame")
+        frame.setObjectName("topToolbar")
+        frame.setFixedHeight(40)
         layout = QHBoxLayout(frame)
-        layout.setContentsMargins(18, 14, 18, 14)
-        layout.setSpacing(16)
+        layout.setContentsMargins(12, 6, 12, 6)
+        layout.setSpacing(12)
 
-        # Логотип и подзаголовок
-        title_box = QVBoxLayout()
-        title_box.setSpacing(4)
+        # Название продукта и бейдж офлайн-режима
+        brand_layout = QHBoxLayout()
+        brand_layout.setSpacing(8)
 
-        title_label = QLabel("Рейс-Проверка")
-        title_label.setStyleSheet("font-size: 19px; font-weight: 800; color: #0F172A;")
-        title_box.addWidget(title_label)
+        title_label = QLabel("РЕЙС-ПРОВЕРКА")
+        title_label.setStyleSheet(
+            "font-size: 13px; font-weight: 800; color: #0F172A; letter-spacing: 0.5px;"
+        )
+        brand_layout.addWidget(title_label)
 
-        sub_label = QLabel("Локальный диффчекер: Заявка ↔ Черновик ЭТрН (152-ФЗ Offline)")
-        sub_label.setStyleSheet("font-size: 12px; color: #64748B;")
-        title_box.addWidget(sub_label)
+        offline_badge = QLabel("152-ФЗ Offline")
+        offline_badge.setStyleSheet(
+            "font-size: 10px; font-weight: 600; color: #047857; "
+            "background-color: #D1FAE5; border-radius: 3px; padding: 1px 5px;"
+        )
+        brand_layout.addWidget(offline_badge)
+        layout.addLayout(brand_layout)
 
-        layout.addLayout(title_box)
         layout.addStretch(1)
 
-        # Переключатель демо-сценариев
-        demo_box = QHBoxLayout()
-        demo_box.setSpacing(10)
+        # Меню тестовых демо-сценариев с векторной Segoe иконкой
+        self._demo_menu_btn = QToolButton(self)
+        self._demo_menu_btn.setObjectName("demoMenuBtn")
+        self._demo_menu_btn.setText("Демо-сценарии ▾")
+        self._demo_menu_btn.setIcon(
+            create_segoe_icon(GLYPH_PLAY, QColor("#334155"), 12, y_offset=1.0)
+        )
+        self._demo_menu_btn.setIconSize(QSize(12, 12))
+        self._demo_menu_btn.setToolButtonStyle(Qt.ToolButtonStyle.ToolButtonTextBesideIcon)
+        self._demo_menu_btn.setToolTip("Выбрать эталонный тестовый сценарий (Ctrl+D)")
+        self._demo_menu_btn.setPopupMode(QToolButton.ToolButtonPopupMode.InstantPopup)
+        self._demo_menu_btn.setFixedHeight(28)
+        self._demo_menu_btn.setCursor(Qt.CursorShape.PointingHandCursor)
 
-        demo_label = QLabel("Тестовый сценарий:")
-        demo_label.setStyleSheet("font-size: 13px; font-weight: 600; color: #475569;")
-        demo_box.addWidget(demo_label)
+        demo_menu = QMenu(self._demo_menu_btn)
+        for key in self._scenarios:
+            action = QAction(key, self)
+            action.triggered.connect(lambda checked=False, k=key: self._on_scenario_selected(k))
+            demo_menu.addAction(action)
+        self._demo_menu_btn.setMenu(demo_menu)
+        layout.addWidget(self._demo_menu_btn)
 
-        self._scenario_combo = QComboBox()
-        self._scenario_combo.setMinimumWidth(380)
-        self._scenario_combo.setFixedHeight(36)
-        for name in self._scenarios:
-            self._scenario_combo.addItem(name)
-        demo_box.addWidget(self._scenario_combo)
+        # Кнопка сброса сессии с векторной Segoe иконкой
+        self._reset_btn = QPushButton("Очистить всё")
+        self._reset_btn.setObjectName("toolbarResetBtn")
+        self._reset_btn.setIcon(create_segoe_icon(GLYPH_TRASH, QColor("#64748B"), 12, y_offset=1.0))
+        self._reset_btn.setIconSize(QSize(12, 12))
+        self._reset_btn.setToolTip("Сбросить сессию и очистить файлы (Ctrl+R)")
+        self._reset_btn.setFixedHeight(28)
+        self._reset_btn.setCursor(Qt.CursorShape.PointingHandCursor)
+        self._reset_btn.clicked.connect(self._reset_all)
+        layout.addWidget(self._reset_btn)
 
-        self._load_demo_button = QPushButton("Загрузить демо")
-        self._load_demo_button.setToolTip("Загрузить выбранный сценарий и файлы примеров")
-        self._load_demo_button.setCursor(Qt.CursorShape.PointingHandCursor)
-        self._load_demo_button.setFixedHeight(36)
-        self._load_demo_button.clicked.connect(self._on_load_demo_clicked)
-        demo_box.addWidget(self._load_demo_button)
-
-        layout.addLayout(demo_box)
         return frame
 
-    def _create_actions_frame(self) -> QFrame:
-        """Создает панель управления и индикации прогресса."""
-        frame = QFrame()
-        layout = QVBoxLayout(frame)
-        layout.setContentsMargins(0, 0, 0, 0)
-        layout.setSpacing(6)
+    def _setup_status_bar(self) -> None:
+        """Настраивает системный статус-бар со строго симметричными отступами."""
+        status_bar = self.statusBar()
+        if status_bar is None:
+            return
 
-        button_row = QHBoxLayout()
-        button_row.setSpacing(12)
+        status_bar.setSizeGripEnabled(False)
+        status_bar.setFixedHeight(28)
+        status_bar.setContentsMargins(14, 0, 14, 0)
 
-        self._start_button = QPushButton("Сверить документы")
-        self._start_button.setObjectName("primaryButton")
-        self._start_button.setCursor(Qt.CursorShape.PointingHandCursor)
-        self._start_button.setFixedHeight(38)
-        self._start_button.setEnabled(False)
-        self._start_button.clicked.connect(self._start_validation)
-        button_row.addWidget(self._start_button)
+        # Левый информационный текст с чистым позиционированием
+        self._status_text = QLabel("Прикрепите документы или выберите демо-сценарий (Ctrl+D)")
+        self._status_text.setStyleSheet("color: #64748B; font-size: 11px;")
+        self._status_text.setContentsMargins(0, 0, 0, 0)
+        status_bar.addWidget(self._status_text, stretch=1)
 
-        self._clear_button = QPushButton("Очистить все")
-        self._clear_button.setObjectName("secondaryButton")
-        self._clear_button.setCursor(Qt.CursorShape.PointingHandCursor)
-        self._clear_button.setFixedHeight(38)
-        self._clear_button.clicked.connect(self._reset_all)
-        button_row.addWidget(self._clear_button)
-
-        button_row.addStretch(1)
-
-        self._status_label = QLabel("Прикрепите документы или выберите демо-сценарий")
-        self._status_label.setStyleSheet("color: #64748B; font-size: 13px; font-weight: 500;")
-        button_row.addWidget(self._status_label)
-
-        layout.addLayout(button_row)
-
-        # Тонкий прогресс-бар
+        # Встроенный ультратонкий прогресс-бар
         self._progress_bar = QProgressBar()
+        self._progress_bar.setFixedHeight(4)
+        self._progress_bar.setFixedWidth(140)
         self._progress_bar.setRange(0, 100)
-        self._progress_bar.setValue(0)
         self._progress_bar.setTextVisible(False)
         self._progress_bar.setVisible(False)
-        layout.addWidget(self._progress_bar)
+        status_bar.addPermanentWidget(self._progress_bar)
 
-        return frame
+        # Правый блок метрик с симметричным 14px отступом от границы окна
+        self._metrics_label = QLabel("Проверено: 0  │  Время: 0 мс")
+        self._metrics_label.setStyleSheet("color: #64748B; font-size: 11px; font-weight: 500;")
+        self._metrics_label.setContentsMargins(0, 0, 0, 0)
+        status_bar.addPermanentWidget(self._metrics_label)
 
-    def _create_kpi_banner(self) -> QFrame:
-        """Создает карточку сводки результатов валидации."""
-        self._banner_frame = QFrame()
-        self._banner_frame.setObjectName("statusBanner_MATCH")
-        layout = QHBoxLayout(self._banner_frame)
-        layout.setContentsMargins(20, 14, 20, 14)
-        layout.setSpacing(24)
+    def _setup_shortcuts(self) -> None:
+        """Настраивает глобальные горячие клавиши интерфейса."""
+        # Ctrl+D: открыть меню демо-сценариев
+        self._demo_shortcut = QShortcut(QKeySequence("Ctrl+D"), self)
+        self._demo_shortcut.activated.connect(self._demo_menu_btn.showMenu)
 
-        # Итоговый статус (крупная надпись)
-        self._kpi_title_label = QLabel("РЕЙС СОГЛАСОВАН")
-        self._kpi_title_label.setStyleSheet("font-size: 16px; font-weight: 800;")
-        layout.addWidget(self._kpi_title_label, stretch=1)
-
-        # Блоки метрик
-        self._kpi_critical_label = QLabel("Ошибок: 0")
-        self._kpi_critical_label.setStyleSheet("font-size: 13px; font-weight: 700; color: #B91C1C;")
-        layout.addWidget(self._kpi_critical_label)
-
-        self._kpi_warning_label = QLabel("Предупреждений: 0")
-        self._kpi_warning_label.setStyleSheet("font-size: 13px; font-weight: 700; color: #B45309;")
-        layout.addWidget(self._kpi_warning_label)
-
-        self._kpi_time_label = QLabel("Время: 0 мс")
-        self._kpi_time_label.setStyleSheet("font-size: 13px; font-weight: 600; color: #475569;")
-        layout.addWidget(self._kpi_time_label)
-
-        return self._banner_frame
+        # Ctrl+R: сбросить всё
+        self._reset_shortcut = QShortcut(QKeySequence("Ctrl+R"), self)
+        self._reset_shortcut.activated.connect(self._reset_all)
 
     def _apply_styles(self) -> None:
         """Загружает стили из style.qss."""
@@ -224,54 +212,49 @@ class MainWindow(QMainWindow):
             with open(style_path, encoding="utf-8") as f:
                 self.setStyleSheet(f.read())
 
+    def _on_files_ready(self, order_path: str, waybill_path: str) -> None:
+        """Автоматический запуск сверки при наличии обоих документов (Zero-Click)."""
+        self._start_validation(order_path, waybill_path)
+
     def _on_files_changed(self) -> None:
-        """Проверяет наличие файлов и активирует кнопку проверки."""
-        has_order = self._order_drop_zone.has_file()
-        has_waybill = self._waybill_drop_zone.has_file()
+        """Обработка изменения файлов в слотах."""
+        if not self._doc_slots.has_both_files():
+            self._summary_bar.setVisible(False)
+            self._diff_table.clear()
+            self._status_text.setText("Прикрепите второй документ для запуска валидации")
 
-        if has_order and has_waybill:
-            self._start_button.setEnabled(True)
-            self._status_label.setText("Документы готовы к сверке")
-        elif has_order or has_waybill:
-            self._start_button.setEnabled(False)
-            self._status_label.setText("Загрузите второй документ для запуска валидации")
-        else:
-            self._start_button.setEnabled(False)
-            self._status_label.setText("Прикрепите документы или выберите демо-сценарий")
+    def _on_scenario_selected(self, scenario_key: str) -> None:
+        """Загружает выбранный тестовый сценарий и автоматически запускает сверку."""
+        self._selected_scenario_key = scenario_key
+        # Подставляем моковые файлы в слоты
+        self._doc_slots.set_files(
+            "Заявка_на_перевозку_№452.pdf",
+            "Черновик_ЭТрН_№452_Титул1.xml",
+        )
+        self._status_text.setText(f"Загружен тестовый сценарий: {scenario_key}")
 
-    def _on_load_demo_clicked(self) -> None:
-        """Загружает выбранный тестовый сценарий."""
-        selected_scenario = self._scenario_combo.currentText()
+    def _start_validation(
+        self,
+        order_path: str | None = None,
+        waybill_path: str | None = None,
+    ) -> None:
+        """Запускает асинхронную валидацию документов в фоновом QThread."""
+        if self._worker is not None and self._worker.isRunning():
+            self._worker.requestInterruption()
+            self._worker.wait(1000)
 
-        # Имитируем подстановку файлов
-        self._order_drop_zone.set_file("Заявка_на_перевозку_№452.pdf")
-        self._waybill_drop_zone.set_file("Черновик_ЭТрН_№452_Титул1.xml")
+        resolved_order = order_path or self._doc_slots.get_order_path() or "order.pdf"
+        resolved_waybill = waybill_path or self._doc_slots.get_waybill_path() or "waybill.xml"
 
-        self._status_label.setText(f"Загружен тестовый набор: {selected_scenario}")
-        self._start_button.setEnabled(True)
-
-        # Автоматический запуск проверки сценария
-        self._start_validation()
-
-    def _start_validation(self) -> None:
-        """Запускает асинхронный процесс валидации в фоновом QThread."""
-        order_path = self._order_drop_zone.get_file_path() or "mock_order.pdf"
-        waybill_path = self._waybill_drop_zone.get_file_path() or "mock_waybill.xml"
-        selected_scenario = self._scenario_combo.currentText()
-
-        # Блокировка интерфейса на время проверки
-        self._start_button.setEnabled(False)
-        self._load_demo_button.setEnabled(False)
-        self._clear_button.setEnabled(False)
+        # Индикация запуска
         self._progress_bar.setVisible(True)
-        self._progress_bar.setValue(5)
-        self._status_label.setText("Запуск конвейера проверки...")
+        self._progress_bar.setValue(10)
+        self._status_text.setText("Сверка документов в фоновом конвейере...")
 
-        # Инициализация и старт воркера
         self._worker = ValidationWorker(
-            order_path=order_path,
-            waybill_path=waybill_path,
-            scenario_key=selected_scenario,
+            order_path=resolved_order,
+            waybill_path=resolved_waybill,
+            scenario_key=self._selected_scenario_key,
         )
         self._worker.progress_changed.connect(self._on_worker_progress)
         self._worker.validation_finished.connect(self._on_worker_finished)
@@ -279,81 +262,68 @@ class MainWindow(QMainWindow):
         self._worker.start()
 
     def _on_worker_progress(self, percent: int, stage_text: str) -> None:
-        """Обновление прогресс-бара и текстового статуса."""
+        """Обновление шкалы прогресса и статусной строки."""
         self._progress_bar.setValue(percent)
-        self._status_label.setText(stage_text)
+        self._status_text.setText(stage_text)
 
     def _on_worker_finished(self, report: SessionReport) -> None:
-        """Обработка успешного завершения валидации."""
+        """Успешное завершение валидации документов."""
         self._current_report = report
         self._progress_bar.setVisible(False)
-        self._start_button.setEnabled(True)
-        self._load_demo_button.setEnabled(True)
-        self._clear_button.setEnabled(True)
 
-        # Обновление баннера сводки
-        self._update_kpi_banner(report)
+        # Обновление 36px инфо-полосы сводки
+        self._summary_bar.set_report(report)
 
-        # Заполнение таблицы расхождений
+        # Обновление таблицы MVC
         self._diff_table.set_rows(report.rows)
 
-        self._status_label.setText(
-            f"Валидация завершена за {report.processing_time_ms} мс. "
-            f"Проверено реквизитов: {len(report.rows)}"
+        # Обновление статус-бара
+        self._metrics_label.setText(
+            f"Проверено: {len(report.rows)}  │  Время: {report.processing_time_ms} мс"
         )
+        self._status_text.setText("Валидация успешно завершена")
 
     def _on_worker_failed(self, error_message: str) -> None:
-        """Обработка ошибок воркера."""
+        """Обработка ошибок конвейера валидации."""
         self._progress_bar.setVisible(False)
-        self._start_button.setEnabled(True)
-        self._load_demo_button.setEnabled(True)
-        self._clear_button.setEnabled(True)
-        self._status_label.setText("Ошибка при проверке документов")
+        self._status_text.setText("Ошибка при валидации документов")
+        QMessageBox.critical(self, "Ошибка сверки", error_message)
 
-        QMessageBox.critical(self, "Ошибка валидации", error_message)
+    def _diff_table_filter_changed(self, hide_matches: bool) -> None:
+        """Переключение фильтрации 'Только расхождения' в таблице."""
+        self._diff_table.set_hide_matches(hide_matches)
 
-    def _update_kpi_banner(self, report: SessionReport) -> None:
-        """Обновляет внешний вид и данные карточки сводки."""
-        self._banner_frame.setObjectName(f"statusBanner_{report.overall_status.value}")
-        self._banner_frame.style().unpolish(self._banner_frame)
-        self._banner_frame.style().polish(self._banner_frame)
-
-        if report.overall_status == ValidationStatus.MATCH:
-            self._kpi_title_label.setText("РЕЙС СОГЛАСОВАН: Все реквизиты совпадают")
-            self._kpi_title_label.setStyleSheet(
-                "font-size: 15px; font-weight: 800; color: #166534;"
-            )
-        elif report.overall_status == ValidationStatus.CRITICAL:
-            self._kpi_title_label.setText("ВНИМАНИЕ: Обнаружены критические расхождения!")
-            self._kpi_title_label.setStyleSheet(
-                "font-size: 15px; font-weight: 800; color: #991B1B;"
-            )
-        elif report.overall_status == ValidationStatus.WARNING:
-            self._kpi_title_label.setText("ТРЕБУЕТСЯ ПРОВЕРКА: Имеются некритические расхождения")
-            self._kpi_title_label.setStyleSheet(
-                "font-size: 15px; font-weight: 800; color: #92400E;"
-            )
-        else:
-            self._kpi_title_label.setText(
-                "СОМНИТЕЛЬНЫЕ ДАННЫЕ: Низкая уверенность распознавания OCR"
-            )
-            self._kpi_title_label.setStyleSheet(
-                "font-size: 15px; font-weight: 800; color: #334155;"
-            )
-
-        self._kpi_critical_label.setText(f"Критических: {report.critical_errors_count}")
-        self._kpi_warning_label.setText(f"Предупреждений: {report.warnings_count}")
-        self._kpi_time_label.setText(f"Время: {report.processing_time_ms} мс")
-
-        self._kpi_banner.setVisible(True)
+    def _on_value_copied(self, text: str) -> None:
+        """Отображает временное уведомление в статус-баре при копировании реквизита."""
+        statusBar = self.statusBar()
+        if statusBar:
+            statusBar.showMessage(f"Скопировано в буфер: «{text}»", 3000)
 
     def _reset_all(self) -> None:
         """Полный сброс состояния интерфейса."""
-        self._order_drop_zone.clear_file()
-        self._waybill_drop_zone.clear_file()
+        if self._worker is not None and self._worker.isRunning():
+            self._worker.requestInterruption()
+            self._worker.wait(1000)
+
+        self._doc_slots.clear_all()
+        self._summary_bar.reset()
+        self._summary_bar.setVisible(False)
         self._diff_table.clear()
-        self._kpi_banner.setVisible(False)
         self._progress_bar.setVisible(False)
-        self._start_button.setEnabled(False)
         self._current_report = None
-        self._status_label.setText("Прикрепите документы или выберите демо-сценарий")
+        self._selected_scenario_key = None
+        self._metrics_label.setText("Проверено: 0  │  Время: 0 мс")
+        self._status_text.setText("Прикрепите документы или выберите демо-сценарий (Ctrl+D)")
+
+    # Свойства обратной совместимости для старых тестов
+    @property
+    def _order_drop_zone(self) -> DropZoneWidget:
+        return self._doc_slots._order_slot
+
+    @property
+    def _waybill_drop_zone(self) -> DropZoneWidget:
+        return self._doc_slots._waybill_slot
+
+    @property
+    def _kpi_banner(self) -> QWidget:
+        return self._summary_bar

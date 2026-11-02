@@ -22,6 +22,13 @@ from PySide6.QtWidgets import (
 )
 
 from freight_check.contracts import ValidationStatus
+from freight_check.ui.icons import (
+    GLYPH_CHECK,
+    GLYPH_ERROR,
+    GLYPH_HELP,
+    GLYPH_WARNING,
+    get_segoe_font,
+)
 from freight_check.ui.models import (
     DIFF_HIGHLIGHTS_ROLE,
     IS_MONOSPACE_ROLE,
@@ -47,11 +54,12 @@ COLOR_MATCH_TEXT = QColor("#64748B")
 COLOR_TEXT_PRIMARY = QColor("#0F172A")
 COLOR_SELECTION_BG = QColor("#E0E7FF")
 
+# Векторные иконки Segoe Fluent Icons для каждого статуса
 STATUS_GLYPHS: dict[ValidationStatus, str] = {
-    ValidationStatus.CRITICAL: "✕",
-    ValidationStatus.WARNING: "▲",
-    ValidationStatus.UNCERTAIN: "?",
-    ValidationStatus.MATCH: "✓",
+    ValidationStatus.CRITICAL: GLYPH_ERROR,
+    ValidationStatus.WARNING: GLYPH_WARNING,
+    ValidationStatus.UNCERTAIN: GLYPH_HELP,
+    ValidationStatus.MATCH: GLYPH_CHECK,
 }
 
 
@@ -64,7 +72,7 @@ def get_monospace_font(base_font: QFont) -> QFont:
 
 
 class ParameterColumnDelegate(QStyledItemDelegate):
-    """Делегат первой колонки («Параметр рейса»): левый 4px маркер и иконка статуса."""
+    """Делегат первой колонки («Параметр рейса»): левый 4px маркер и иконка статуса Segoe."""
 
     def sizeHint(
         self,
@@ -81,9 +89,10 @@ class ParameterColumnDelegate(QStyledItemDelegate):
         option: QStyleOptionViewItem,
         index: QModelIndex | QPersistentModelIndex,
     ) -> None:
-        """Отрисовывает статус-маркер, иконку и название параметра."""
+        """Отрисовывает статус-маркер, векторную иконку Segoe и название параметра."""
         painter.save()
         painter.setRenderHint(QPainter.RenderHint.Antialiasing, True)
+        painter.setRenderHint(QPainter.RenderHint.TextAntialiasing, True)
 
         status = index.data(STATUS_ROLE) or ValidationStatus.MATCH
         text = str(index.data(Qt.ItemDataRole.DisplayRole) or "")
@@ -110,19 +119,18 @@ class ParameterColumnDelegate(QStyledItemDelegate):
         marker_rect = QRect(rect.left(), rect.top(), 4, rect.height())
         painter.fillRect(marker_rect, marker_color)
 
-        # 3. Иконка / глиф статуса
-        glyph = STATUS_GLYPHS.get(status, "✓")
-        glyph_font = QFont(option.font)
-        glyph_font.setPointSize(9)
-        glyph_font.setBold(True)
+        # 3. Иконка / глиф статуса (Segoe Fluent Icons с TextAntialiasing)
+        glyph = STATUS_GLYPHS.get(status, GLYPH_CHECK)
+        glyph_font = get_segoe_font(10)
         painter.setFont(glyph_font)
         painter.setPen(marker_color)
 
-        glyph_rect = QRect(rect.left() + 10, rect.top(), 16, rect.height())
+        glyph_rect = QRect(rect.left() + 9, rect.top(), 18, rect.height())
         painter.drawText(glyph_rect, int(Qt.AlignmentFlag.AlignCenter), glyph)
 
         # 4. Текст названия параметра
         text_font = QFont(option.font)
+        text_font.setFamilies(["Segoe UI Variable Text", "Segoe UI", "Inter", "sans-serif"])
         if status in (ValidationStatus.CRITICAL, ValidationStatus.WARNING):
             text_font.setWeight(QFont.Weight.DemiBold)
             painter.setPen(COLOR_TEXT_PRIMARY)
@@ -170,6 +178,7 @@ class DiffHighlightDelegate(QStyledItemDelegate):
         """Отрисовывает значения с акцентным diff-выделением отличающихся токенов."""
         painter.save()
         painter.setRenderHint(QPainter.RenderHint.Antialiasing, True)
+        painter.setRenderHint(QPainter.RenderHint.TextAntialiasing, True)
 
         rect = option.rect
 
@@ -190,6 +199,8 @@ class DiffHighlightDelegate(QStyledItemDelegate):
         base_font = QFont(option.font)
         if is_mono:
             base_font = get_monospace_font(base_font)
+        else:
+            base_font.setFamilies(["Segoe UI Variable Text", "Segoe UI", "Inter", "sans-serif"])
 
         # Если статус MATCH или UNCERTAIN, или нет diff-срезов — рисуем единым текстом
         if status not in (ValidationStatus.CRITICAL, ValidationStatus.WARNING) or not diff_spans:
@@ -295,6 +306,7 @@ class ExplanationColumnDelegate(QStyledItemDelegate):
         """Отрисовывает пояснение: для MATCH лаконичный приглушенный прочерк '—'."""
         painter.save()
         painter.setRenderHint(QPainter.RenderHint.Antialiasing, True)
+        painter.setRenderHint(QPainter.RenderHint.TextAntialiasing, True)
 
         rect = option.rect
 
@@ -309,6 +321,7 @@ class ExplanationColumnDelegate(QStyledItemDelegate):
         text = str(index.data(Qt.ItemDataRole.DisplayRole) or "")
 
         font = QFont(option.font)
+        font.setFamilies(["Segoe UI Variable Text", "Segoe UI", "Inter", "sans-serif"])
         if status == ValidationStatus.MATCH:
             painter.setPen(COLOR_MATCH_TEXT)
         elif status == ValidationStatus.CRITICAL:

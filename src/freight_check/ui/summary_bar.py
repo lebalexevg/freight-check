@@ -20,19 +20,19 @@ from freight_check.contracts import SessionReport, ValidationStatus
 STATUS_BADGE_STYLES: dict[ValidationStatus, str] = {
     ValidationStatus.MATCH: (
         "background-color: #DCFCE7; color: #166534; border: 1px solid #86EFAC; "
-        "border-radius: 4px; padding: 2px 10px; font-weight: 700; font-size: 11px;"
+        "border-radius: 4px; padding: 0px 8px; font-weight: 700; font-size: 11px;"
     ),
     ValidationStatus.CRITICAL: (
         "background-color: #FEE2E2; color: #991B1B; border: 1px solid #FCA5A5; "
-        "border-radius: 4px; padding: 2px 10px; font-weight: 700; font-size: 11px;"
+        "border-radius: 4px; padding: 0px 8px; font-weight: 700; font-size: 11px;"
     ),
     ValidationStatus.WARNING: (
         "background-color: #FEF3C7; color: #92400E; border: 1px solid #FCD34D; "
-        "border-radius: 4px; padding: 2px 10px; font-weight: 700; font-size: 11px;"
+        "border-radius: 4px; padding: 0px 8px; font-weight: 700; font-size: 11px;"
     ),
     ValidationStatus.UNCERTAIN: (
         "background-color: #F1F5F9; color: #334155; border: 1px solid #CBD5E1; "
-        "border-radius: 4px; padding: 2px 10px; font-weight: 700; font-size: 11px;"
+        "border-radius: 4px; padding: 0px 8px; font-weight: 700; font-size: 11px;"
     ),
 }
 
@@ -45,34 +45,36 @@ STATUS_BADGE_TEXT: dict[ValidationStatus, str] = {
 
 
 class SummaryBarWidget(QFrame):
-    """Компактная полоса сводки статуса проверки (36px)."""
+    """Компактная гармоничная полоса сводки статуса проверки (40px)."""
 
     filter_only_diffs_changed = Signal(bool)
 
     def __init__(self, parent: QWidget | None = None) -> None:
         super().__init__(parent)
         self.setObjectName("summaryBar")
-        self.setFixedHeight(36)
+        self.setFixedHeight(40)
         self._setup_ui()
 
     def _setup_ui(self) -> None:
         layout = QHBoxLayout(self)
-        layout.setContentsMargins(12, 0, 12, 0)
+        layout.setContentsMargins(14, 6, 14, 6)
         layout.setSpacing(14)
 
-        # 1. Бейдж итогового статуса
+        # 1. Бейдж итогового статуса (24px pill, идеально отцентрированный)
         self._status_badge = QLabel("● ОЖИДАНИЕ ДОКУМЕНТОВ")
+        self._status_badge.setFixedHeight(24)
+        self._status_badge.setAlignment(Qt.AlignmentFlag.AlignCenter)
         self._status_badge.setStyleSheet(
             "background-color: #F1F5F9; color: #64748B; border: 1px solid #CBD5E1; "
-            "border-radius: 4px; padding: 2px 10px; font-weight: 700; font-size: 11px;"
+            "border-radius: 4px; padding: 0px 8px; font-weight: 700; font-size: 11px;"
         )
         layout.addWidget(self._status_badge)
 
-        # Разделитель
+        # Тонкий центрированный разделитель-волосок (16px)
         sep = QFrame()
-        sep.setFrameShape(QFrame.Shape.VLine)
-        sep.setFrameShadow(QFrame.Shadow.Plain)
-        sep.setStyleSheet("color: #E2E8F0;")
+        sep.setFixedWidth(1)
+        sep.setFixedHeight(16)
+        sep.setStyleSheet("background-color: #E2E8F0;")
         layout.addWidget(sep)
 
         # 2. Компактные индикаторы-точки со счетчиками
@@ -94,11 +96,6 @@ class SummaryBarWidget(QFrame):
         self._only_diffs_cb = QCheckBox("Только расхождения")
         self._only_diffs_cb.setObjectName("onlyDiffsCheckBox")
         self._only_diffs_cb.setCursor(Qt.CursorShape.PointingHandCursor)
-        self._only_diffs_cb.setStyleSheet(
-            "QCheckBox { font-size: 12px; font-weight: 500; color: #334155; } "
-            "QCheckBox::indicator { width: 15px; height: 15px; border-radius: 3px; border: 1px solid #CBD5E1; } "
-            "QCheckBox::indicator:checked { background-color: #2563EB; border-color: #1D4ED8; }"
-        )
         self._only_diffs_cb.toggled.connect(self.filter_only_diffs_changed.emit)
         layout.addWidget(self._only_diffs_cb)
 
@@ -142,7 +139,7 @@ class SummaryBarWidget(QFrame):
         self._status_badge.setText("● ОЖИДАНИЕ ДОКУМЕНТОВ")
         self._status_badge.setStyleSheet(
             "background-color: #F1F5F9; color: #64748B; border: 1px solid #CBD5E1; "
-            "border-radius: 4px; padding: 2px 10px; font-weight: 700; font-size: 11px;"
+            "border-radius: 4px; padding: 0px 8px; font-weight: 700; font-size: 11px;"
         )
         self._critical_label.setText("● 0 критических")
         self._warning_label.setText("● 0 предупреждений")

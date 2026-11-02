@@ -2,14 +2,14 @@
 
 Поддерживает два адаптивных состояния:
 1. Empty State (файлы не загружены): просторные Drag-and-Drop слоты с подсказками форматов.
-2. Loaded State (оба файла выбраны): ультракомпактная однострочная сплит-панель (38px)
-   с бейджами форматов, кнопками замены и сохранением прямого Drag-and-Drop.
+2. Loaded State (оба файла выбраны): ультракомпактная однострочная сплит-панель (40px)
+   с бейджами форматов, векторными Segoe-иконками замены/удаления и прямым Drag-and-Drop.
 """
 
 from pathlib import Path
 
-from PySide6.QtCore import Qt, Signal
-from PySide6.QtGui import QDragEnterEvent, QDragLeaveEvent, QDropEvent
+from PySide6.QtCore import QSize, Qt, Signal
+from PySide6.QtGui import QColor, QDragEnterEvent, QDragLeaveEvent, QDropEvent
 from PySide6.QtWidgets import (
     QFileDialog,
     QFrame,
@@ -19,6 +19,12 @@ from PySide6.QtWidgets import (
     QStackedLayout,
     QVBoxLayout,
     QWidget,
+)
+
+from freight_check.ui.icons import (
+    GLYPH_CLOSE,
+    GLYPH_REFRESH,
+    create_segoe_icon,
 )
 
 SUPPORTED_EXTENSIONS: frozenset[str] = frozenset(
@@ -119,15 +125,17 @@ class DropZoneWidget(QFrame):
         # 2. Компактный однострочный вид (Compact / Loaded State)
         self._compact_widget = QWidget()
         compact_layout = QHBoxLayout(self._compact_widget)
-        compact_layout.setContentsMargins(10, 4, 10, 4)
+        compact_layout.setContentsMargins(12, 6, 12, 6)
         compact_layout.setSpacing(8)
 
-        # Форматный бейдж
+        # Форматный бейдж (компактный 20px тег, идеально парящий по центру)
         self._compact_badge = QLabel("DOC")
         self._compact_badge.setObjectName("formatBadge")
+        self._compact_badge.setFixedHeight(20)
+        self._compact_badge.setAlignment(Qt.AlignmentFlag.AlignCenter)
         self._compact_badge.setStyleSheet(
             "background-color: #E2E8F0; color: #334155; font-size: 10px; "
-            "font-weight: 700; border-radius: 4px; padding: 2px 6px;"
+            "font-weight: 700; border-radius: 4px; padding: 0px 6px;"
         )
         compact_layout.addWidget(self._compact_badge)
 
@@ -136,19 +144,25 @@ class DropZoneWidget(QFrame):
         self._compact_name_label.setStyleSheet("font-size: 12px; font-weight: 600; color: #0F172A;")
         compact_layout.addWidget(self._compact_name_label, stretch=1)
 
-        # Кнопка замены
-        self._replace_button = QPushButton("↻ Заменить")
+        # Кнопка замены с векторной иконкой Segoe (выровненной по центральной оси текста)
+        self._replace_button = QPushButton("Заменить")
         self._replace_button.setObjectName("compactActionBtn")
-        self._replace_button.setFixedHeight(24)
+        self._replace_button.setIcon(
+            create_segoe_icon(GLYPH_REFRESH, QColor("#475569"), 12, y_offset=1.0)
+        )
+        self._replace_button.setIconSize(QSize(12, 12))
+        self._replace_button.setFixedHeight(26)
         self._replace_button.setCursor(Qt.CursorShape.PointingHandCursor)
         self._replace_button.clicked.connect(self._on_browse_clicked)
         compact_layout.addWidget(self._replace_button)
 
-        # Кнопка удаления
-        self._clear_button = QPushButton("✕")
+        # Кнопка удаления с математически центрированной векторной иконкой Segoe
+        self._clear_button = QPushButton()
         self._clear_button.setObjectName("compactClearBtn")
+        self._clear_button.setIcon(create_segoe_icon(GLYPH_CLOSE, QColor("#64748B"), 14))
+        self._clear_button.setIconSize(QSize(14, 14))
         self._clear_button.setToolTip("Удалить файл")
-        self._clear_button.setFixedSize(24, 24)
+        self._clear_button.setFixedSize(26, 26)
         self._clear_button.setCursor(Qt.CursorShape.PointingHandCursor)
         self._clear_button.clicked.connect(self.clear_file)
         compact_layout.addWidget(self._clear_button)
@@ -162,7 +176,7 @@ class DropZoneWidget(QFrame):
             self._compact_widget if compact else self._expanded_widget
         )
         if compact:
-            self.setFixedHeight(38)
+            self.setFixedHeight(40)
         else:
             self.setMinimumHeight(96)
             self.setMaximumHeight(116)
@@ -264,7 +278,7 @@ class DropZoneWidget(QFrame):
 class DocumentSlotsWidget(QWidget):
     """Адаптивный контейнер для двух слотов документов (Заявка и Накладная).
 
-    Автоматически сворачивается в единую узкую сплит-панель высотой 38px,
+    Автоматически сворачивается в единую узкую сплит-панель высотой 40px,
     когда выбраны оба документа, освобождая место для таблицы.
     """
 
