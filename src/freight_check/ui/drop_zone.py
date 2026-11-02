@@ -9,8 +9,17 @@
 
 from pathlib import Path
 
-from PySide6.QtCore import QSize, Qt, Signal
-from PySide6.QtGui import QColor, QDragEnterEvent, QDragLeaveEvent, QDropEvent
+from PySide6.QtCore import QEvent, QRectF, QSize, Qt, Signal
+from PySide6.QtGui import (
+    QColor,
+    QDragEnterEvent,
+    QDragLeaveEvent,
+    QDropEvent,
+    QEnterEvent,
+    QPainter,
+    QPaintEvent,
+    QPen,
+)
 from PySide6.QtWidgets import (
     QFileDialog,
     QFrame,
@@ -346,6 +355,54 @@ class DropZoneWidget(QFrame):
         self.setProperty("dragOver", "true" if active else "false")
         self.style().unpolish(self)
         self.style().polish(self)
+        self.update()
+
+    def enterEvent(self, event: QEnterEvent) -> None:
+        """Обработка наведения курсора для перерисовки интерактивного пунктира."""
+        super().enterEvent(event)
+        if not self._is_compact and not self.has_file():
+            self.update()
+
+    def leaveEvent(self, event: QEvent) -> None:
+        """Обработка ухода курсора для возврата исходного цвета пунктира."""
+        super().leaveEvent(event)
+        if not self._is_compact and not self.has_file():
+            self.update()
+
+    def paintEvent(self, event: QPaintEvent) -> None:
+        """Отрисовывает математически точный 1px пунктир для развернутого пустого слота.
+
+        Устраняет дефект встроенного QSS-рендерера Qt, где правая и нижняя границы
+        пунктира из-за целочисленного округления ошибочно рендерятся толщиной 2px.
+        """
+        super().paintEvent(event)
+        if not self._is_compact and not self.has_file():
+            painter = QPainter(self)
+            painter.setRenderHint(QPainter.RenderHint.Antialiasing, True)
+
+            is_drag = self.property("dragOver") == "true"
+            is_hover = self.underMouse()
+
+            if is_drag:
+                color = QColor("#1D4ED8")
+                pen_style = Qt.PenStyle.SolidLine
+            elif is_hover:
+                color = QColor("#2563EB")
+                pen_style = Qt.PenStyle.DashLine
+            else:
+                color = QColor("#94A3B8")
+                pen_style = Qt.PenStyle.DashLine
+
+            pen = QPen(color)
+            pen.setWidthF(1.0)
+            pen.setStyle(pen_style)
+            if pen_style == Qt.PenStyle.DashLine:
+                pen.setDashPattern([4, 4])
+
+            painter.setPen(pen)
+            rect = QRectF(0.5, 0.5, self.width() - 1.0, self.height() - 1.0)
+            painter.drawRoundedRect(rect, 2.0, 2.0)
+            painter.end()
 
     def _on_browse_clicked(self) -> None:
         """Открытие системного диалога выбора файла."""

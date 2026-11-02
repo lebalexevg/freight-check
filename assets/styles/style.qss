@@ -77,18 +77,11 @@ QMenu::item:selected {
 /* 2. Адаптивная зона документов */
 QFrame#dropZone {
     background-color: #FFFFFF;
-    border: 1px dashed #94A3B8;
+    border: none;
     border-radius: 2px;
 }
 
-QFrame#dropZone:hover {
-    border-color: #2563EB;
-    background-color: #FFFFFF;
-}
-
 QFrame#dropZone[dragOver="true"] {
-    border-color: #1D4ED8;
-    border-style: solid;
     background-color: #EFF6FF;
 }
 
