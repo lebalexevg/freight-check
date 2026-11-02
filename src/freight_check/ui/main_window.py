@@ -72,17 +72,17 @@ class MainWindow(QMainWindow):
         self.setCentralWidget(central_widget)
 
         root_layout = QVBoxLayout(central_widget)
-        root_layout.setContentsMargins(16, 12, 16, 12)
-        root_layout.setSpacing(10)
+        root_layout.setContentsMargins(16, 16, 16, 14)
+        root_layout.setSpacing(12)
 
-        # 1. Плоская командная строка сводки и управления (36px, всегда видна вверху)
+        # 1. Плоская командная строка сводки и управления (48px, всегда видна вверху)
         self._summary_bar = SummaryBarWidget(self)
         self._summary_bar.setup_scenarios(self._scenarios, self._on_scenario_selected)
         self._summary_bar.reset_requested.connect(self._reset_all)
         self._summary_bar.filter_only_diffs_changed.connect(self._diff_table_filter_changed)
         root_layout.addWidget(self._summary_bar)
 
-        # 2. Адаптивная сплит-панель документов (Empty State во весь экран vs Loaded State 36px)
+        # 2. Адаптивная сплит-панель документов (Empty State во весь экран vs Loaded State 48px)
         self._doc_slots = DocumentSlotsWidget(self)
         self._doc_slots.files_ready.connect(self._on_files_ready)
         self._doc_slots.files_changed.connect(self._on_files_changed)
@@ -104,8 +104,8 @@ class MainWindow(QMainWindow):
             return
 
         status_bar.setSizeGripEnabled(False)
-        status_bar.setFixedHeight(28)
-        status_bar.setContentsMargins(14, 0, 14, 0)
+        status_bar.setFixedHeight(30)
+        status_bar.setContentsMargins(16, 0, 16, 0)
 
         # Левый информационный текст с чистым позиционированием
         self._status_text = QLabel("Прикрепите документы или выберите демо-сценарий (Ctrl+D)")

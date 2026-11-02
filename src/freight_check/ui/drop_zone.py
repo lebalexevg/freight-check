@@ -225,8 +225,10 @@ class DropZoneWidget(QFrame):
 
         clear_btn = QPushButton("  Удалить", self._loaded_expanded_widget)
         clear_btn.setObjectName("expandedActionBtn")
-        clear_btn.setIcon(create_segoe_icon(GLYPH_CLOSE, QColor("#64748B"), base_size=13))
-        clear_btn.setIconSize(QSize(13, 13))
+        clear_btn.setIcon(
+            create_segoe_icon(GLYPH_CLOSE, QColor("#475569"), base_size=14, glyph_scale=1.0)
+        )
+        clear_btn.setIconSize(QSize(14, 14))
         clear_btn.setFixedHeight(32)
         clear_btn.setFixedWidth(160)
         clear_btn.setCursor(Qt.CursorShape.PointingHandCursor)
@@ -236,12 +238,12 @@ class DropZoneWidget(QFrame):
         loaded_layout.addLayout(action_col)
         self._stacked_layout.addWidget(self._loaded_expanded_widget)
 
-        # 3. Компактный однострочный вид (Compact / Loaded State — 36px)
+        # 3. Компактный однострочный вид (Compact / Loaded State — 48px)
         self._compact_widget = QWidget(self)
         compact_layout = QHBoxLayout(self._compact_widget)
-        compact_layout.setContentsMargins(12, 0, 12, 0)
+        compact_layout.setContentsMargins(16, 8, 16, 8)
         compact_layout.setAlignment(Qt.AlignmentFlag.AlignVCenter)
-        compact_layout.setSpacing(8)
+        compact_layout.setSpacing(10)
 
         # Текстовый префикс роли слота («Заявка:» или «ЭТрН:»)
         self._role_label = QLabel(self._role_prefix, self._compact_widget)
@@ -259,13 +261,13 @@ class DropZoneWidget(QFrame):
         compact_layout.addWidget(self._compact_name_label, stretch=1)
 
         # Кнопка замены: плоская и компактная
-        self._replace_button = QPushButton("Заменить", self._compact_widget)
+        self._replace_button = QPushButton("  Заменить", self._compact_widget)
         self._replace_button.setObjectName("compactActionBtn")
         self._replace_button.setIcon(
-            create_segoe_icon(GLYPH_REFRESH, QColor("#475569"), 12, y_offset=1.0)
+            create_segoe_icon(GLYPH_REFRESH, QColor("#475569"), 13, y_offset=0.5)
         )
-        self._replace_button.setIconSize(QSize(12, 12))
-        self._replace_button.setFixedHeight(24)
+        self._replace_button.setIconSize(QSize(13, 13))
+        self._replace_button.setFixedHeight(30)
         self._replace_button.setCursor(Qt.CursorShape.PointingHandCursor)
         self._replace_button.clicked.connect(self._on_browse_clicked)
         compact_layout.addWidget(self._replace_button)
@@ -273,10 +275,12 @@ class DropZoneWidget(QFrame):
         # Кнопка удаления: плоская и компактная
         self._clear_button = QPushButton(self._compact_widget)
         self._clear_button.setObjectName("compactClearBtn")
-        self._clear_button.setIcon(create_segoe_icon(GLYPH_CLOSE, QColor("#64748B"), 12))
+        self._clear_button.setIcon(
+            create_segoe_icon(GLYPH_CLOSE, QColor("#475569"), 12, glyph_scale=1.0)
+        )
         self._clear_button.setIconSize(QSize(12, 12))
         self._clear_button.setToolTip("Удалить файл")
-        self._clear_button.setFixedSize(24, 24)
+        self._clear_button.setFixedSize(30, 30)
         self._clear_button.setCursor(Qt.CursorShape.PointingHandCursor)
         self._clear_button.clicked.connect(self.clear_file)
         compact_layout.addWidget(self._clear_button)
@@ -295,7 +299,7 @@ class DropZoneWidget(QFrame):
         self.style().polish(self)
         if compact:
             self._stacked_layout.setCurrentWidget(self._compact_widget)
-            self.setFixedHeight(36)
+            self.setFixedHeight(48)
             self.setSizePolicy(QSizePolicy.Policy.Preferred, QSizePolicy.Policy.Fixed)
         else:
             self.setMinimumHeight(0)
@@ -477,10 +481,10 @@ class DocumentSlotsWidget(QWidget):
         self._order_slot.set_compact_mode(has_both)
         self._waybill_slot.set_compact_mode(has_both)
         if has_both:
-            self.setFixedHeight(36)
+            self.setFixedHeight(48)
             self.setSizePolicy(QSizePolicy.Policy.Preferred, QSizePolicy.Policy.Fixed)
         else:
-            self.setMinimumHeight(240)
+            self.setMinimumHeight(0)
             self.setMaximumHeight(16777215)
             self.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Expanding)
 

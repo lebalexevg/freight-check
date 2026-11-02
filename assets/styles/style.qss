@@ -20,8 +20,8 @@ QToolButton#demoMenuBtn {
     background-color: #FFFFFF;
     color: #334155;
     border: 1px solid #CBD5E1;
-    border-radius: 3px;
-    padding: 2px 10px;
+    border-radius: 2px;
+    padding: 4px 12px;
     font-weight: 500;
     font-size: 12px;
     qproperty-iconSize: 12px 12px;
@@ -41,8 +41,8 @@ QPushButton#toolbarResetBtn {
     background-color: #FFFFFF;
     color: #64748B;
     border: 1px solid #CBD5E1;
-    border-radius: 3px;
-    padding: 2px 10px;
+    border-radius: 2px;
+    padding: 4px 12px;
     font-weight: 500;
     font-size: 12px;
     qproperty-iconSize: 12px 12px;
@@ -51,7 +51,7 @@ QPushButton#toolbarResetBtn {
 QPushButton#toolbarResetBtn:hover {
     color: #0F172A;
     background-color: #F1F5F9;
-    border-color: #CBD5E1;
+    border-color: #94A3B8;
 }
 
 /* Выпадающие меню QMenu */
@@ -59,14 +59,14 @@ QMenu {
     background-color: #FFFFFF;
     color: #0F172A;
     border: 1px solid #CBD5E1;
-    border-radius: 6px;
+    border-radius: 2px;
     padding: 4px;
 }
 
 QMenu::item {
     padding: 6px 14px;
     font-size: 12px;
-    border-radius: 4px;
+    border-radius: 2px;
 }
 
 QMenu::item:selected {
@@ -77,8 +77,8 @@ QMenu::item:selected {
 /* 2. Адаптивная зона документов */
 QFrame#dropZone {
     background-color: #FFFFFF;
-    border: 2px dashed #CBD5E1;
-    border-radius: 8px;
+    border: 1px dashed #CBD5E1;
+    border-radius: 2px;
 }
 
 QFrame#dropZone:hover {
@@ -94,13 +94,13 @@ QFrame#dropZone[dragOver="true"] {
 
 QFrame#dropZone[compact="true"] {
     border: 1px solid #E2E8F0;
-    border-radius: 0px;
+    border-radius: 2px;
     background-color: #FFFFFF;
 }
 
 QFrame#dropZone[compact="false"][hasFile="true"] {
     border: 1px solid #94A3B8;
-    border-radius: 8px;
+    border-radius: 2px;
     background-color: #FFFFFF;
 }
 
@@ -109,10 +109,11 @@ QPushButton#dropZoneBrowseBtn {
     background-color: #FFFFFF;
     color: #0F172A;
     border: 1px solid #CBD5E1;
-    border-radius: 5px;
+    border-radius: 2px;
     padding: 6px 20px;
     font-size: 13px;
     font-weight: 600;
+    qproperty-iconSize: 16px 16px;
 }
 
 QPushButton#dropZoneBrowseBtn:hover {
@@ -130,10 +131,11 @@ QPushButton#expandedActionBtn {
     background-color: #FFFFFF;
     color: #334155;
     border: 1px solid #CBD5E1;
-    border-radius: 5px;
+    border-radius: 2px;
     padding: 6px 16px;
     font-size: 12px;
     font-weight: 600;
+    qproperty-iconSize: 14px 14px;
 }
 
 QPushButton#expandedActionBtn:hover {
@@ -151,11 +153,11 @@ QPushButton#compactActionBtn {
     background-color: #FFFFFF;
     color: #475569;
     border: 1px solid #CBD5E1;
-    border-radius: 3px;
-    padding: 2px 8px;
-    font-size: 11px;
+    border-radius: 2px;
+    padding: 4px 10px;
+    font-size: 12px;
     font-weight: 500;
-    qproperty-iconSize: 12px 12px;
+    qproperty-iconSize: 13px 13px;
 }
 
 QPushButton#compactActionBtn:hover {
@@ -167,7 +169,7 @@ QPushButton#compactActionBtn:hover {
 QPushButton#compactClearBtn {
     background-color: #FFFFFF;
     border: 1px solid #CBD5E1;
-    border-radius: 3px;
+    border-radius: 2px;
     padding: 0px;
     margin: 0px;
     qproperty-iconSize: 12px 12px;
@@ -182,7 +184,7 @@ QPushButton#compactClearBtn:hover {
 QFrame#summaryBar {
     background-color: #FFFFFF;
     border: 1px solid #E2E8F0;
-    border-radius: 4px;
+    border-radius: 2px;
 }
 
 /* Чекбокс фильтрации расхождений с четкой иконкой */
@@ -196,7 +198,7 @@ QCheckBox {
 QCheckBox::indicator {
     width: 14px;
     height: 14px;
-    border-radius: 3px;
+    border-radius: 2px;
     border: 1px solid #CBD5E1;
     background-color: #FFFFFF;
 }
@@ -216,7 +218,7 @@ QPushButton {
     background-color: #FFFFFF;
     color: #334155;
     border: 1px solid #CBD5E1;
-    border-radius: 5px;
+    border-radius: 2px;
     padding: 5px 12px;
     font-weight: 500;
     font-size: 12px;
@@ -237,7 +239,7 @@ QTableView {
     background-color: #FFFFFF;
     color: #0F172A;
     border: 1px solid #E2E8F0;
-    border-radius: 6px;
+    border-radius: 2px;
     gridline-color: transparent;
     selection-background-color: #E0E7FF;
     selection-color: #0F172A;
@@ -250,7 +252,7 @@ QTableView QWidget#qt_scrollarea_viewport {
 
 QTableView::item {
     border-bottom: 1px solid #F1F5F9;
-    padding: 0px 8px;
+    padding: 4px 8px;
 }
 
 QTableView::item:selected {
@@ -268,7 +270,7 @@ QHeaderView::section {
     background-color: #F8FAFC;
     color: #475569;
     text-align: left;
-    padding: 4px 8px 4px 12px;
+    padding: 6px 8px 6px 12px;
     font-weight: 600;
     font-size: 12px;
     border: none;
@@ -291,7 +293,7 @@ QScrollBar:vertical {
 
 QScrollBar::handle:vertical {
     background-color: #CBD5E1;
-    border-radius: 3px;
+    border-radius: 2px;
     min-height: 24px;
 }
 
@@ -311,7 +313,7 @@ QScrollBar:horizontal {
 
 QScrollBar::handle:horizontal {
     background-color: #CBD5E1;
-    border-radius: 3px;
+    border-radius: 2px;
     min-width: 24px;
 }
 

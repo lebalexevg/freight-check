@@ -5,7 +5,15 @@
 """
 
 from PySide6.QtCore import Qt
-from PySide6.QtGui import QColor, QFont, QIcon, QImage, QPainter, QPainterPath, QPixmap
+from PySide6.QtGui import (
+    QColor,
+    QFont,
+    QIcon,
+    QImage,
+    QPainter,
+    QPainterPath,
+    QPixmap,
+)
 
 SEGOE_FONT_FAMILY: str = "Segoe Fluent Icons"
 SEGOE_FALLBACK_FAMILY: str = "Segoe MDL2 Assets"
@@ -38,36 +46,44 @@ def create_segoe_icon(
     color: QColor | None = None,
     base_size: int = 16,
     y_offset: float = 0.0,
+    weight: QFont.Weight | None = None,
+    glyph_scale: float = 0.88,
 ) -> QIcon:
-    """Генерирует мульти-DPI векторный QIcon (1x, 2x, 3x) с точным геометрическим центрированием."""
+    """Генерирует мульти-DPI векторный QIcon (1x, 2x, 3x) с точным геометрическим центрированием чернил."""
     resolved_color = color or DEFAULT_ICON_COLOR
+    resolved_weight = (
+        weight
+        if weight is not None
+        else (QFont.Weight.Bold if base_size < 32 else QFont.Weight.Normal)
+    )
     icon = QIcon()
 
     for scale in (1, 2, 3):
         dim = base_size * scale
-        font = get_segoe_font()
-        font.setPixelSize(int(dim * 0.85))
+        img = QImage(dim, dim, QImage.Format.Format_ARGB32)
+        img.fill(Qt.GlobalColor.transparent)
 
-        # Вычисляем точный геометрический контур глифа через QPainterPath
+        font = get_segoe_font()
+        font.setPixelSize(int(round(dim * glyph_scale)))
+        font.setWeight(resolved_weight)
+
         path = QPainterPath()
         path.addText(0, 0, font, glyph)
         br = path.boundingRect()
 
-        # Центрируем контур математически по центру целевого квадрата с учетом y_offset
         target_cx = dim / 2.0
         target_cy = (dim / 2.0) + (y_offset * scale)
         dx = target_cx - br.center().x()
         dy = target_cy - br.center().y()
         path.translate(dx, dy)
 
-        img = QImage(dim, dim, QImage.Format.Format_ARGB32)
-        img.fill(Qt.GlobalColor.transparent)
-
         painter = QPainter(img)
         painter.setRenderHint(QPainter.RenderHint.Antialiasing, True)
         painter.fillPath(path, resolved_color)
         painter.end()
 
-        icon.addPixmap(QPixmap.fromImage(img))
+        pix = QPixmap.fromImage(img)
+        pix.setDevicePixelRatio(scale)
+        icon.addPixmap(pix)
 
     return icon

@@ -97,10 +97,10 @@ class DiffTableWidget(QWidget):
         self._table.setWordWrap(False)
         self._table.setTextElideMode(Qt.TextElideMode.ElideRight)
 
-        # Высота строк (34px) и заголовка (34px)
-        self._table.verticalHeader().setDefaultSectionSize(34)
+        # Высота строк (38px) и заголовка (38px)
+        self._table.verticalHeader().setDefaultSectionSize(38)
         header = self._table.horizontalHeader()
-        header.setFixedHeight(34)
+        header.setFixedHeight(38)
         header.setSortIndicatorShown(False)
         header.setSectionsClickable(True)
 

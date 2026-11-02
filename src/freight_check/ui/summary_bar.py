@@ -52,19 +52,19 @@ class SummaryBarWidget(QFrame):
     def __init__(self, parent: QWidget | None = None) -> None:
         super().__init__(parent)
         self.setObjectName("summaryBar")
-        self.setFixedHeight(36)
+        self.setFixedHeight(48)
         self._setup_ui()
 
     def _setup_ui(self) -> None:
         layout = QHBoxLayout(self)
-        layout.setContentsMargins(12, 0, 12, 0)
+        layout.setContentsMargins(16, 8, 16, 8)
         layout.setAlignment(Qt.AlignmentFlag.AlignVCenter)
-        layout.setSpacing(8)
+        layout.setSpacing(10)
 
         # 1. Индикатор статуса: векторная иконка Segoe Fluent + чистый текст
         self._status_icon = QLabel(self)
         self._status_icon.setObjectName("summaryStatusIcon")
-        self._status_icon.setFixedSize(14, 14)
+        self._status_icon.setFixedSize(22, 22)
         self._status_icon.setAlignment(Qt.AlignmentFlag.AlignCenter)
         self._status_icon.setStyleSheet("border: none; background: transparent;")
         self._status_icon.setVisible(False)
@@ -80,7 +80,7 @@ class SummaryBarWidget(QFrame):
         # Тонкий вертикальный разделитель |
         sep1 = QFrame()
         sep1.setFixedWidth(1)
-        sep1.setFixedHeight(14)
+        sep1.setFixedHeight(18)
         sep1.setStyleSheet("background-color: #CBD5E1;")
         layout.addWidget(sep1)
 
@@ -108,32 +108,32 @@ class SummaryBarWidget(QFrame):
 
         sep2 = QFrame()
         sep2.setFixedWidth(1)
-        sep2.setFixedHeight(14)
+        sep2.setFixedHeight(18)
         sep2.setStyleSheet("background-color: #CBD5E1;")
         layout.addWidget(sep2)
 
         # Кнопка меню тестовых демо-сценариев
         self._demo_menu_btn = QToolButton(self)
         self._demo_menu_btn.setObjectName("demoMenuBtn")
-        self._demo_menu_btn.setText("Демо-сценарии")
+        self._demo_menu_btn.setText("  Демо-сценарии")
         self._demo_menu_btn.setIcon(
-            create_segoe_icon(GLYPH_PLAY, QColor("#334155"), 12, y_offset=1.0)
+            create_segoe_icon(GLYPH_PLAY, QColor("#334155"), 12, y_offset=0.5)
         )
         self._demo_menu_btn.setIconSize(QSize(12, 12))
         self._demo_menu_btn.setToolButtonStyle(Qt.ToolButtonStyle.ToolButtonTextBesideIcon)
         self._demo_menu_btn.setToolTip("Выбрать эталонный тестовый сценарий (Ctrl+D)")
         self._demo_menu_btn.setPopupMode(QToolButton.ToolButtonPopupMode.InstantPopup)
-        self._demo_menu_btn.setFixedHeight(24)
+        self._demo_menu_btn.setFixedHeight(30)
         self._demo_menu_btn.setCursor(Qt.CursorShape.PointingHandCursor)
         layout.addWidget(self._demo_menu_btn)
 
         # Кнопка сброса сессии
-        self._reset_btn = QPushButton("Очистить всё")
+        self._reset_btn = QPushButton("  Очистить всё")
         self._reset_btn.setObjectName("toolbarResetBtn")
-        self._reset_btn.setIcon(create_segoe_icon(GLYPH_TRASH, QColor("#64748B"), 12, y_offset=1.0))
+        self._reset_btn.setIcon(create_segoe_icon(GLYPH_TRASH, QColor("#64748B"), 12, y_offset=0.5))
         self._reset_btn.setIconSize(QSize(12, 12))
         self._reset_btn.setToolTip("Сбросить сессию и очистить файлы (Ctrl+R)")
-        self._reset_btn.setFixedHeight(24)
+        self._reset_btn.setFixedHeight(30)
         self._reset_btn.setCursor(Qt.CursorShape.PointingHandCursor)
         self._reset_btn.clicked.connect(self.reset_requested.emit)
         layout.addWidget(self._reset_btn)
@@ -156,8 +156,8 @@ class SummaryBarWidget(QFrame):
         status = report.overall_status
         if status in STATUS_CONFIG:
             text, color, glyph = STATUS_CONFIG[status]
-            icon = create_segoe_icon(glyph, QColor(color), base_size=14)
-            self._status_icon.setPixmap(icon.pixmap(QSize(14, 14)))
+            icon = create_segoe_icon(glyph, QColor(color), base_size=20)
+            self._status_icon.setPixmap(icon.pixmap(QSize(20, 20)))
             self._status_icon.setVisible(True)
             self._status_badge.setText(text)
             self._status_badge.setStyleSheet(

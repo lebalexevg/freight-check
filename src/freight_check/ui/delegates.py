@@ -13,6 +13,7 @@ from PySide6.QtGui import (
     QColor,
     QFont,
     QFontMetrics,
+    QIcon,
     QPainter,
 )
 from PySide6.QtWidgets import (
@@ -27,7 +28,7 @@ from freight_check.ui.icons import (
     GLYPH_ERROR,
     GLYPH_HELP,
     GLYPH_WARNING,
-    get_segoe_font,
+    create_segoe_icon,
 )
 from freight_check.ui.models import (
     DIFF_HIGHLIGHTS_ROLE,
@@ -61,6 +62,26 @@ STATUS_GLYPHS: dict[ValidationStatus, str] = {
     ValidationStatus.UNCERTAIN: GLYPH_HELP,
     ValidationStatus.MATCH: GLYPH_CHECK,
 }
+
+_STATUS_ICONS_CACHE: dict[ValidationStatus, QIcon] = {}
+
+
+def get_status_icon(status: ValidationStatus) -> QIcon:
+    """Возвращает мульти-DPI векторный QIcon статуса с нормализованным оптическим размером и центрированием."""
+    if not _STATUS_ICONS_CACHE:
+        _STATUS_ICONS_CACHE[ValidationStatus.CRITICAL] = create_segoe_icon(
+            GLYPH_ERROR, COLOR_CRITICAL_MARKER, base_size=16, glyph_scale=0.78
+        )
+        _STATUS_ICONS_CACHE[ValidationStatus.WARNING] = create_segoe_icon(
+            GLYPH_WARNING, COLOR_WARNING_MARKER, base_size=16, glyph_scale=0.78
+        )
+        _STATUS_ICONS_CACHE[ValidationStatus.UNCERTAIN] = create_segoe_icon(
+            GLYPH_HELP, COLOR_UNCERTAIN_MARKER, base_size=16, glyph_scale=0.85
+        )
+        _STATUS_ICONS_CACHE[ValidationStatus.MATCH] = create_segoe_icon(
+            GLYPH_CHECK, COLOR_MATCH_MARKER, base_size=16, glyph_scale=1.15
+        )
+    return _STATUS_ICONS_CACHE.get(status, _STATUS_ICONS_CACHE[ValidationStatus.MATCH])
 
 
 def get_monospace_font(base_font: QFont) -> QFont:
@@ -122,20 +143,8 @@ class ParameterColumnDelegate(QStyledItemDelegate):
 
             marker_rect = QRect(rect.left(), rect.top(), 4, rect.height())
             painter.fillRect(marker_rect, marker_color)
-        else:
-            # Для MATCH левый маркер не рисуем — оставляем спокойную строку
-            marker_color = COLOR_MATCH_MARKER
 
-        # 3. Иконка / глиф статуса (Segoe Fluent Icons с TextAntialiasing)
-        glyph = STATUS_GLYPHS.get(status, GLYPH_CHECK)
-        glyph_font = get_segoe_font(10)
-        painter.setFont(glyph_font)
-        painter.setPen(marker_color)
-
-        glyph_rect = QRect(rect.left() + 9, rect.top(), 18, rect.height())
-        painter.drawText(glyph_rect, int(Qt.AlignmentFlag.AlignCenter), glyph)
-
-        # 4. Текст названия параметра с защитой от переполнения (ElideRight)
+        # 3. Настройка шрифта текста названия параметра и вычисление метрик
         text_font = QFont(option.font)
         text_font.setFamilies(["Segoe UI Variable Text", "Segoe UI", "Inter", "sans-serif"])
         if status in (ValidationStatus.CRITICAL, ValidationStatus.WARNING):
@@ -149,13 +158,27 @@ class ParameterColumnDelegate(QStyledItemDelegate):
             painter.setPen(COLOR_UNCERTAIN_TEXT)
 
         painter.setFont(text_font)
+        fm = QFontMetrics(text_font)
+
+        # 4. Векторная иконка статуса с точным оптическим выравниванием по центру заглавных букв
+        # При вертикальном центрировании текста Qt размещает baseline по формуле:
+        baseline_y = rect.top() + (rect.height() - fm.height()) // 2 + fm.ascent()
+        cap_center_y = baseline_y - (fm.capHeight() / 2.0)
+
+        icon_size = 16
+        icon_top = int(round(cap_center_y - (icon_size / 2.0)))
+        icon_rect = QRect(rect.left() + 16, icon_top, icon_size, icon_size)
+
+        icon = get_status_icon(status)
+        icon.paint(painter, icon_rect)
+
+        # 5. Текст названия параметра с защитой от переполнения (ElideRight)
         text_rect = QRect(
-            rect.left() + 32,
+            rect.left() + 44,
             rect.top(),
-            rect.width() - 36,
+            rect.width() - 48,
             rect.height(),
         )
-        fm = QFontMetrics(text_font)
         elided_text = fm.elidedText(text, Qt.TextElideMode.ElideRight, text_rect.width())
         painter.drawText(
             text_rect,
