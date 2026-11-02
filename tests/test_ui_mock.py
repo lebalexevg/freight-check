@@ -155,6 +155,7 @@ def test_main_window_integration(qapp: QApplication) -> None:
     """Проверка инициализации и интеграции компонентов MainWindow."""
     window = MainWindow()
 
+    assert not window.windowIcon().isNull()
     assert window.windowTitle() == "Рейс-Проверка — Кросс-валидация документов"
     assert not window._summary_bar.isHidden()
     assert "Ожидание документов" in window._summary_bar._status_badge.text()
@@ -199,6 +200,7 @@ def test_about_dialog(qapp: QApplication) -> None:
     from freight_check.ui.about_dialog import APP_NAME, APP_VERSION, AboutDialog
 
     dialog = AboutDialog()
+    assert not dialog.windowIcon().isNull()
     assert APP_NAME in dialog.windowTitle()
     assert dialog.isModal()
 
@@ -249,3 +251,18 @@ def test_main_window_about_triggers(qapp: QApplication, monkeypatch: pytest.Monk
     assert len(about_called) == 3
 
     window.close()
+
+
+def test_app_icon(qapp: QApplication) -> None:
+    """Проверка наличия и корректности загрузки векторной/растровой иконки приложения."""
+    from freight_check.ui.icons import get_app_icon, get_app_icon_path
+
+    icon_path = get_app_icon_path()
+    assert icon_path.exists()
+
+    icon = get_app_icon()
+    assert not icon.isNull()
+    pix = icon.pixmap(32, 32)
+    assert not pix.isNull()
+    assert pix.width() == 32
+    assert pix.height() == 32

@@ -33,6 +33,7 @@ from freight_check.contracts import SessionReport
 from freight_check.ui.about_dialog import APP_VERSION, AboutDialog
 from freight_check.ui.diff_table import DiffTableWidget
 from freight_check.ui.drop_zone import DocumentSlotsWidget, DropZoneWidget
+from freight_check.ui.icons import get_app_icon
 from freight_check.ui.mock_data import get_all_scenarios
 from freight_check.ui.summary_bar import SummaryBarWidget
 from freight_check.ui.worker import ValidationWorker
@@ -54,9 +55,12 @@ class MainWindow(QMainWindow):
 
     def __init__(self) -> None:
         super().__init__()
+        app_icon = get_app_icon()
+        self.setWindowIcon(app_icon)
         app = QApplication.instance()
         if app is not None and isinstance(app, QApplication):
             app.setApplicationDisplayName("")
+            app.setWindowIcon(app_icon)
         self.setWindowTitle("Рейс-Проверка — Кросс-валидация документов")
         self.resize(1140, 840)
         self.setMinimumSize(960, 640)

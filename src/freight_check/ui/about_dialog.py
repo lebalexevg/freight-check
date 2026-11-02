@@ -1,7 +1,7 @@
 """Модальное окно «О программе» (AboutDialog)."""
 
 from PySide6.QtCore import QSize, Qt
-from PySide6.QtGui import QColor, QFont
+from PySide6.QtGui import QFont
 from PySide6.QtWidgets import (
     QDialog,
     QFrame,
@@ -12,7 +12,7 @@ from PySide6.QtWidgets import (
     QWidget,
 )
 
-from freight_check.ui.icons import GLYPH_DOCUMENT, create_segoe_icon
+from freight_check.ui.icons import get_app_icon
 
 APP_VERSION: str = "0.1.0-beta"
 APP_NAME: str = "Рейс-Проверка"
@@ -28,6 +28,7 @@ class AboutDialog(QDialog):
         self.setWindowTitle(f"О программе — {APP_NAME}")
         self.setModal(True)
         self.setFixedSize(480, 360)
+        self.setWindowIcon(get_app_icon())
         self._setup_ui()
 
     def _setup_ui(self) -> None:
@@ -35,17 +36,15 @@ class AboutDialog(QDialog):
         layout.setContentsMargins(28, 24, 28, 20)
         layout.setSpacing(14)
 
-        # 1. Шапка: векторная иконка, название, версия и подзаголовок
+        # 1. Шапка: официальная иконка приложения, название, версия и подзаголовок
         header_layout = QHBoxLayout()
         header_layout.setSpacing(16)
         header_layout.setAlignment(Qt.AlignmentFlag.AlignTop)
 
         icon_label = QLabel(self)
-        icon_pixmap = create_segoe_icon(
-            GLYPH_DOCUMENT, QColor("#2563EB"), base_size=40, glyph_scale=0.9
-        ).pixmap(QSize(40, 40))
+        icon_pixmap = get_app_icon().pixmap(QSize(42, 42))
         icon_label.setPixmap(icon_pixmap)
-        icon_label.setFixedSize(40, 40)
+        icon_label.setFixedSize(42, 42)
         header_layout.addWidget(icon_label)
 
         title_col = QVBoxLayout()

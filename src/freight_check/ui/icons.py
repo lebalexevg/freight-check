@@ -4,6 +4,8 @@
 четкого отображения без артефактов масштабирования на экранах 100%, 125%, 150%, 200%.
 """
 
+from pathlib import Path
+
 from PySide6.QtCore import Qt
 from PySide6.QtGui import (
     QColor,
@@ -87,3 +89,31 @@ def create_segoe_icon(
         icon.addPixmap(pix)
 
     return icon
+
+
+_APP_ICON_CACHE: QIcon | None = None
+
+
+def get_app_icon_path() -> Path:
+    """Определяет путь к файлу иконки приложения (.ico или .png)."""
+    current_file = Path(__file__).resolve()
+    project_root = current_file.parents[3]
+    candidate_ico = project_root / "assets" / "icons" / "app_icon.ico"
+    if candidate_ico.exists():
+        return candidate_ico
+    candidate_png = project_root / "assets" / "icons" / "app_icon.png"
+    if candidate_png.exists():
+        return candidate_png
+    candidate_svg = project_root / "assets" / "icons" / "app_icon.svg"
+    if candidate_svg.exists():
+        return candidate_svg
+    return Path("assets/icons/app_icon.png")
+
+
+def get_app_icon() -> QIcon:
+    """Возвращает многомасштабный QIcon приложения для окон и панели задач Windows."""
+    global _APP_ICON_CACHE
+    if _APP_ICON_CACHE is None or _APP_ICON_CACHE.isNull():
+        path = get_app_icon_path()
+        _APP_ICON_CACHE = QIcon(str(path)) if path.exists() else QIcon()
+    return _APP_ICON_CACHE
