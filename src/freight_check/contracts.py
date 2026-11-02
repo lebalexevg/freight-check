@@ -1,5 +1,6 @@
 from dataclasses import dataclass, field
 from enum import StrEnum
+from pathlib import Path
 
 
 class ValidationStatus(StrEnum):
@@ -70,3 +71,13 @@ class SessionReport:
     warnings_count: int
     processing_time_ms: int
     rows: list[ValidationRow] = field(default_factory=list)
+
+
+@dataclass(slots=True, frozen=True)
+class RawDocument:
+    """Сырые извлеченные данные. Промежуточный слой между парсерами и семантическим извлечением."""
+
+    file_path: Path
+    pages: list[list[ExtractedField]]
+    document_type: str
+    metadata: dict = field(default_factory=dict)
