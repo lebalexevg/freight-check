@@ -22,9 +22,7 @@ class ImagePreprocessor:
     @staticmethod
     def binarize(image: np.ndarray) -> np.ndarray:
         """Бинаризация изображения (метод Оцу)."""
-        _, binary = cv2.threshold(
-            image, 0, 255, cv2.THRESH_BINARY + cv2.THRESH_OTSU
-        )
+        _, binary = cv2.threshold(image, 0, 255, cv2.THRESH_BINARY + cv2.THRESH_OTSU)
         return binary
 
     @classmethod

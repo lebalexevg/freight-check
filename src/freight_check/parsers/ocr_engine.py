@@ -12,7 +12,7 @@ class OCREngine:
         self._engine = RapidOCR()
 
     def recognize(
-        self, image: np.ndarray, min_confidence: float = 0.0
+            self, image: np.ndarray, min_confidence: float = 0.0
     ) -> list[ExtractedField]:
         """Распознает текст на изображении.
 
@@ -33,7 +33,10 @@ class OCREngine:
         fields: list[ExtractedField] = []
 
         for box, text, score in result:
-            if score < min_confidence:
+            # Явно приводим score к float, так как RapidOCR может вернуть строку
+            score_float = float(score)
+
+            if score_float < min_confidence:
                 continue
 
             x_coords = [int(point[0]) for point in box]
@@ -46,9 +49,9 @@ class OCREngine:
 
             fields.append(
                 ExtractedField(
-                    raw_value=text,
-                    normalized_value=text.strip(),
-                    confidence=float(score),
+                    raw_value=str(text),
+                    normalized_value=str(text).strip(),
+                    confidence=score_float,
                     source_box=(x, y, width, height),
                 )
             )
