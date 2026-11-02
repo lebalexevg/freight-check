@@ -370,10 +370,11 @@ class DropZoneWidget(QFrame):
             self.update()
 
     def paintEvent(self, event: QPaintEvent) -> None:
-        """Отрисовывает математически точный 1px пунктир для развернутого пустого слота.
+        """Отрисовывает математически точный 1px/2px пунктир для развернутого пустого слота.
 
         Устраняет дефект встроенного QSS-рендерера Qt, где правая и нижняя границы
         пунктира из-за целочисленного округления ошибочно рендерятся толщиной 2px.
+        При наведении курсора увеличивает толщину рамки на 1 пункт (с 1px до 2px).
         """
         super().paintEvent(event)
         if not self._is_compact and not self.has_file():
@@ -386,21 +387,25 @@ class DropZoneWidget(QFrame):
             if is_drag:
                 color = QColor("#1D4ED8")
                 pen_style = Qt.PenStyle.SolidLine
+                pen_width = 2.0
             elif is_hover:
                 color = QColor("#2563EB")
                 pen_style = Qt.PenStyle.DashLine
+                pen_width = 2.0
             else:
                 color = QColor("#94A3B8")
                 pen_style = Qt.PenStyle.DashLine
+                pen_width = 1.0
 
             pen = QPen(color)
-            pen.setWidthF(1.0)
+            pen.setWidthF(pen_width)
             pen.setStyle(pen_style)
             if pen_style == Qt.PenStyle.DashLine:
                 pen.setDashPattern([4, 4])
 
             painter.setPen(pen)
-            rect = QRectF(0.5, 0.5, self.width() - 1.0, self.height() - 1.0)
+            half = pen_width / 2.0
+            rect = QRectF(half, half, self.width() - pen_width, self.height() - pen_width)
             painter.drawRoundedRect(rect, 2.0, 2.0)
             painter.end()
 
