@@ -117,7 +117,7 @@ class MainWindow(QMainWindow):
 
         # Левый информационный текст с чистым позиционированием
         self._status_text = QLabel("Прикрепите документы или выберите демо-сценарий (Ctrl+D)")
-        self._status_text.setStyleSheet("color: #64748B; font-size: 11px;")
+        self._status_text.setStyleSheet("color: #64748B; font-size: 12px;")
         self._status_text.setContentsMargins(0, 0, 0, 0)
         status_bar.addWidget(self._status_text, stretch=1)
 
@@ -132,7 +132,7 @@ class MainWindow(QMainWindow):
 
         # Правый блок метрик с симметричным 14px отступом от границы окна
         self._metrics_label = QLabel("Проверено: 0  │  Время: 0 мс")
-        self._metrics_label.setStyleSheet("color: #64748B; font-size: 11px; font-weight: 500;")
+        self._metrics_label.setStyleSheet("color: #64748B; font-size: 12px; font-weight: 500;")
         self._metrics_label.setContentsMargins(0, 0, 0, 0)
         status_bar.addPermanentWidget(self._metrics_label)
 

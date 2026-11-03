@@ -54,7 +54,7 @@ class DiffTableWidget(QWidget):
         empty_layout.setSpacing(8)
 
         empty_title = QLabel("Документы готовы к сверке")
-        empty_title.setStyleSheet("font-size: 15px; font-weight: 700; color: #1E293B;")
+        empty_title.setStyleSheet("font-size: 18px; font-weight: 600; color: #0F172A;")
         empty_title.setAlignment(Qt.AlignmentFlag.AlignCenter)
         empty_layout.addWidget(empty_title)
 
@@ -63,7 +63,7 @@ class DiffTableWidget(QWidget):
             "либо выберите готовый сценарий в меню «Демо-сценарии» (Ctrl+D)."
         )
         empty_desc.setStyleSheet(
-            "font-size: 12px; color: #64748B; text-align: center; line-height: 1.4;"
+            "font-size: 14px; color: #64748B; text-align: center; line-height: 1.5;"
         )
         empty_desc.setAlignment(Qt.AlignmentFlag.AlignCenter)
         empty_layout.addWidget(empty_desc)
@@ -98,9 +98,9 @@ class DiffTableWidget(QWidget):
         self._table.setTextElideMode(Qt.TextElideMode.ElideRight)
 
         # Высота строк (38px) и заголовка (38px)
-        self._table.verticalHeader().setDefaultSectionSize(38)
+        self._table.verticalHeader().setDefaultSectionSize(42)
         header = self._table.horizontalHeader()
-        header.setFixedHeight(38)
+        header.setFixedHeight(40)
         header.setSortIndicatorShown(False)
         header.setSectionsClickable(True)
 

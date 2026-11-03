@@ -9,7 +9,7 @@ QMainWindow, QDialog {
     background-color: #F1F5F9;
     color: #0F172A;
     font-family: "Segoe UI Variable Text", "Segoe UI", "Inter", -apple-system, BlinkMacSystemFont, "Roboto", sans-serif;
-    font-size: 12px;
+    font-size: 14px;
 }
 
 QDialog#aboutDialog {
@@ -25,9 +25,9 @@ QToolButton#demoMenuBtn {
     color: #334155;
     border: 1px solid #94A3B8;
     border-radius: 2px;
-    padding: 4px 12px;
+    padding: 5px 12px;
     font-weight: 500;
-    font-size: 12px;
+    font-size: 13px;
     qproperty-iconSize: 12px 12px;
 }
 
@@ -46,9 +46,9 @@ QPushButton#toolbarResetBtn {
     color: #475569;
     border: 1px solid #94A3B8;
     border-radius: 2px;
-    padding: 4px 12px;
+    padding: 5px 12px;
     font-weight: 500;
-    font-size: 12px;
+    font-size: 13px;
     qproperty-iconSize: 12px 12px;
 }
 
@@ -92,7 +92,7 @@ QMenu {
 
 QMenu::item {
     padding: 6px 14px;
-    font-size: 12px;
+    font-size: 13px;
     border-radius: 2px;
 }
 
@@ -140,8 +140,8 @@ QPushButton#dropZoneBrowseBtn {
     color: #0F172A;
     border: 1px solid #94A3B8;
     border-radius: 2px;
-    padding: 6px 20px;
-    font-size: 13px;
+    padding: 7px 20px;
+    font-size: 14px;
     font-weight: 600;
     qproperty-iconSize: 16px 16px;
 }
@@ -163,7 +163,7 @@ QPushButton#expandedActionBtn {
     border: 1px solid #94A3B8;
     border-radius: 2px;
     padding: 6px 16px;
-    font-size: 12px;
+    font-size: 13px;
     font-weight: 600;
     qproperty-iconSize: 14px 14px;
 }
@@ -184,8 +184,8 @@ QPushButton#compactActionBtn {
     color: #334155;
     border: 1px solid #94A3B8;
     border-radius: 2px;
-    padding: 4px 10px;
-    font-size: 12px;
+    padding: 5px 12px;
+    font-size: 13px;
     font-weight: 500;
     qproperty-iconSize: 13px 13px;
 }
@@ -219,10 +219,10 @@ QFrame#summaryBar {
 
 /* Чекбокс фильтрации расхождений с четкой иконкой */
 QCheckBox {
-    font-size: 12px;
+    font-size: 13px;
     font-weight: 500;
     color: #334155;
-    spacing: 6px;
+    spacing: 8px;
 }
 
 QCheckBox::indicator {
@@ -249,9 +249,9 @@ QPushButton {
     color: #334155;
     border: 1px solid #94A3B8;
     border-radius: 2px;
-    padding: 5px 12px;
+    padding: 5px 14px;
     font-weight: 500;
-    font-size: 12px;
+    font-size: 13px;
 }
 
 QPushButton:hover {
@@ -300,9 +300,9 @@ QHeaderView::section {
     background-color: #F1F5F9;
     color: #334155;
     text-align: left;
-    padding: 6px 8px 6px 12px;
+    padding: 8px 12px;
     font-weight: 600;
-    font-size: 12px;
+    font-size: 13px;
     border: none;
     border-bottom: 1px solid #CBD5E1;
     border-right: 1px solid #E2E8F0;
@@ -360,7 +360,7 @@ QStatusBar {
     background-color: #F1F5F9;
     border-top: 1px solid #CBD5E1;
     color: #475569;
-    font-size: 11px;
+    font-size: 12px;
     min-height: 28px;
     padding: 0px;
 }
@@ -388,7 +388,7 @@ QPushButton#statusVersionBtn {
     background-color: transparent;
     color: #64748B;
     border: none;
-    font-size: 11px;
+    font-size: 12px;
     font-weight: 500;
     padding: 2px 6px;
     border-radius: 2px;
@@ -410,7 +410,7 @@ QPushButton#aboutCloseBtn {
     border: 1px solid #94A3B8;
     border-radius: 2px;
     font-weight: 500;
-    font-size: 12px;
+    font-size: 13px;
 }
 
 QPushButton#aboutCloseBtn:hover {

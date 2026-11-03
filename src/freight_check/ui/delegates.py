@@ -88,7 +88,7 @@ def get_monospace_font(base_font: QFont) -> QFont:
     """Создает моноширинный шрифт для кодифицированных параметров рейса."""
     font = QFont(base_font)
     font.setFamilies(["Cascadia Mono", "Consolas", "Courier New", "monospace"])
-    font.setPointSize(base_font.pointSize())
+    font.setPixelSize(13)
     return font
 
 
@@ -102,7 +102,7 @@ class ParameterColumnDelegate(QStyledItemDelegate):
     ) -> QSize:
         """Определяет компактную высоту строки 34px."""
         size = super().sizeHint(option, index)
-        return QSize(size.width(), max(size.height(), 34))
+        return QSize(size.width(), max(size.height(), 38))
 
     def paint(
         self,
@@ -199,7 +199,7 @@ class DiffHighlightDelegate(QStyledItemDelegate):
     ) -> QSize:
         """Определяет компактную высоту ячейки."""
         size = super().sizeHint(option, index)
-        return QSize(size.width(), max(size.height(), 34))
+        return QSize(size.width(), max(size.height(), 38))
 
     def paint(
         self,
@@ -331,7 +331,7 @@ class ExplanationColumnDelegate(QStyledItemDelegate):
     ) -> QSize:
         """Определяет компактную высоту ячейки."""
         size = super().sizeHint(option, index)
-        return QSize(size.width(), max(size.height(), 34))
+        return QSize(size.width(), max(size.height(), 38))
 
     def paint(
         self,

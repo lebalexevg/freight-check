@@ -127,7 +127,7 @@ class DropZoneWidget(QFrame):
         self._title_label = QLabel(self._title, self._empty_widget)
         self._title_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
         self._title_label.setStyleSheet(
-            "font-size: 16px; font-weight: 700; color: #0F172A; border: none; background: transparent;"
+            "font-size: 18px; font-weight: 600; color: #0F172A; border: none; background: transparent;"
         )
         empty_layout.addWidget(self._title_label)
 
@@ -135,7 +135,7 @@ class DropZoneWidget(QFrame):
         self._hint_label = QLabel(self._subtitle, self._empty_widget)
         self._hint_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
         self._hint_label.setStyleSheet(
-            "color: #64748B; font-size: 13px; border: none; background: transparent;"
+            "color: #64748B; font-size: 14px; border: none; background: transparent;"
         )
         self._hint_label.setWordWrap(True)
         empty_layout.addWidget(self._hint_label)
@@ -160,7 +160,7 @@ class DropZoneWidget(QFrame):
         dnd_hint = QLabel("Перетащите файл сюда или нажмите кнопку выше", self._empty_widget)
         dnd_hint.setAlignment(Qt.AlignmentFlag.AlignCenter)
         dnd_hint.setStyleSheet(
-            "color: #94A3B8; font-size: 12px; font-weight: 500; border: none; background: transparent;"
+            "color: #94A3B8; font-size: 13px; font-weight: 500; border: none; background: transparent;"
         )
         empty_layout.addWidget(dnd_hint)
 
@@ -170,7 +170,7 @@ class DropZoneWidget(QFrame):
         )
         formats_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
         formats_label.setStyleSheet(
-            "color: #94A3B8; font-size: 11px; border: none; background: transparent;"
+            "color: #94A3B8; font-size: 12px; border: none; background: transparent;"
         )
         empty_layout.addWidget(formats_label)
 
@@ -195,21 +195,21 @@ class DropZoneWidget(QFrame):
         ready_status = QLabel("Документ прикреплен и готов", self._loaded_expanded_widget)
         ready_status.setAlignment(Qt.AlignmentFlag.AlignCenter)
         ready_status.setStyleSheet(
-            "color: #059669; font-size: 12px; font-weight: 600; border: none; background: transparent;"
+            "color: #059669; font-size: 13px; font-weight: 600; border: none; background: transparent;"
         )
         loaded_layout.addWidget(ready_status)
 
         self._loaded_filename_label = QLabel("", self._loaded_expanded_widget)
         self._loaded_filename_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
         self._loaded_filename_label.setStyleSheet(
-            "font-size: 15px; font-weight: 700; color: #0F172A; border: none; background: transparent;"
+            "font-size: 16px; font-weight: 600; color: #0F172A; border: none; background: transparent;"
         )
         loaded_layout.addWidget(self._loaded_filename_label)
 
         self._loaded_filesize_label = QLabel("", self._loaded_expanded_widget)
         self._loaded_filesize_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
         self._loaded_filesize_label.setStyleSheet(
-            "color: #64748B; font-size: 12px; border: none; background: transparent;"
+            "color: #64748B; font-size: 13px; border: none; background: transparent;"
         )
         loaded_layout.addWidget(self._loaded_filesize_label)
 
@@ -258,14 +258,14 @@ class DropZoneWidget(QFrame):
         self._role_label = QLabel(self._role_prefix, self._compact_widget)
         self._role_label.setObjectName("slotRoleLabel")
         self._role_label.setStyleSheet(
-            "color: #64748B; font-size: 12px; font-weight: 500; border: none; background: transparent;"
+            "color: #64748B; font-size: 13px; font-weight: 500; border: none; background: transparent;"
         )
         compact_layout.addWidget(self._role_label)
 
         # Имя файла и размер
         self._compact_name_label = QLabel("", self._compact_widget)
         self._compact_name_label.setStyleSheet(
-            "font-size: 12px; font-weight: 600; color: #0F172A; border: none; background: transparent;"
+            "font-size: 13px; font-weight: 600; color: #0F172A; border: none; background: transparent;"
         )
         compact_layout.addWidget(self._compact_name_label, stretch=1)
 

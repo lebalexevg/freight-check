@@ -27,7 +27,7 @@ class AboutDialog(QDialog):
         self.setObjectName("aboutDialog")
         self.setWindowTitle(f"О программе — {APP_NAME}")
         self.setModal(True)
-        self.setFixedSize(480, 360)
+        self.setFixedSize(480, 380)
         self.setWindowIcon(get_app_icon())
         self._setup_ui()
 
@@ -56,20 +56,20 @@ class AboutDialog(QDialog):
 
         title_label = QLabel(APP_NAME, self)
         title_font = QFont()
-        title_font.setPointSize(16)
+        title_font.setPointSize(18)
         title_font.setWeight(QFont.Weight.Bold)
         title_label.setFont(title_font)
         title_label.setStyleSheet("color: #0F172A;")
         title_row.addWidget(title_label)
 
         version_label = QLabel(f"v{APP_VERSION}", self)
-        version_label.setStyleSheet("color: #64748B; font-size: 12px; font-weight: 600;")
+        version_label.setStyleSheet("color: #64748B; font-size: 13px; font-weight: 600;")
         title_row.addWidget(version_label)
         title_row.addStretch(1)
         title_col.addLayout(title_row)
 
         subtitle_label = QLabel(APP_SUBTITLE, self)
-        subtitle_label.setStyleSheet("color: #475569; font-size: 12px; font-weight: 500;")
+        subtitle_label.setStyleSheet("color: #475569; font-size: 13px; font-weight: 500;")
         title_col.addWidget(subtitle_label)
 
         header_layout.addLayout(title_col, stretch=1)
@@ -88,7 +88,7 @@ class AboutDialog(QDialog):
             self,
         )
         desc_label.setWordWrap(True)
-        desc_label.setStyleSheet("color: #334155; font-size: 12px; line-height: 1.4;")
+        desc_label.setStyleSheet("color: #334155; font-size: 13px; line-height: 1.4;")
         layout.addWidget(desc_label)
 
         # 3. Поддерживаемые форматы документов (двухколоночный текстовый список без pills)
@@ -96,7 +96,7 @@ class AboutDialog(QDialog):
         formats_col.setSpacing(6)
 
         formats_title = QLabel("Поддерживаемые форматы файлов:", self)
-        formats_title.setStyleSheet("color: #0F172A; font-size: 12px; font-weight: 600;")
+        formats_title.setStyleSheet("color: #0F172A; font-size: 13px; font-weight: 600;")
         formats_col.addWidget(formats_title)
 
         formats_grid = QHBoxLayout()
@@ -110,7 +110,7 @@ class AboutDialog(QDialog):
             "• Excel (.xlsx, .xls)",
         ]:
             lbl = QLabel(item, self)
-            lbl.setStyleSheet("color: #334155; font-size: 12px;")
+            lbl.setStyleSheet("color: #334155; font-size: 13px;")
             col1.addWidget(lbl)
 
         col2 = QVBoxLayout()
@@ -121,7 +121,7 @@ class AboutDialog(QDialog):
             "• Сканы и фото (OCR)",
         ]:
             lbl = QLabel(item, self)
-            lbl.setStyleSheet("color: #334155; font-size: 12px;")
+            lbl.setStyleSheet("color: #334155; font-size: 13px;")
             col2.addWidget(lbl)
 
         formats_grid.addLayout(col1)
@@ -139,7 +139,7 @@ class AboutDialog(QDialog):
             "Движок: RapidOCR (ONNX Runtime, CPU) • PySide6 • Python 3.13",
             self,
         )
-        engine_label.setStyleSheet("color: #64748B; font-size: 11px;")
+        engine_label.setStyleSheet("color: #64748B; font-size: 12px;")
         tech_col.addWidget(engine_label)
 
         layout.addLayout(tech_col)
@@ -166,7 +166,7 @@ class AboutDialog(QDialog):
         close_btn.setStyleSheet(
             "background-color: #FFFFFF; color: #334155; "
             "border: 1px solid #94A3B8; border-radius: 2px; "
-            "font-size: 12px; font-weight: 500;"
+            "font-size: 13px; font-weight: 500;"
         )
         close_btn.clicked.connect(self.accept)
         btn_row.addWidget(close_btn)
