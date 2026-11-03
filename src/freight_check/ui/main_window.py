@@ -13,7 +13,7 @@
 
 from pathlib import Path
 
-from PySide6.QtCore import Qt, QTimer
+from PySide6.QtCore import QEvent, QObject, Qt, QTimer
 from PySide6.QtGui import QKeySequence, QShortcut
 from PySide6.QtWidgets import (
     QApplication,
@@ -133,18 +133,16 @@ class MainWindow(QMainWindow):
         self._status_text.setContentsMargins(0, 0, 0, 0)
         status_bar.addWidget(self._status_text, stretch=1)
 
-        # 2. Индикатор загрузки по центру статус-бара (удлинен до 280px, высота 6px)
-        self._progress_bar = QProgressBar()
+        # 2. Индикатор загрузки строго по центру статус-бара (удлинен до 280px, высота 6px)
+        self._progress_bar = QProgressBar(status_bar)
         self._progress_bar.setFixedHeight(6)
         self._progress_bar.setFixedWidth(280)
         self._progress_bar.setRange(0, 100)
         self._progress_bar.setTextVisible(False)
         self._progress_bar.setVisible(False)
-        status_bar.addWidget(self._progress_bar, stretch=0)
 
-        # Распорка справа от прогресс-бара для центрирования между левым текстом и метриками
-        self._status_middle_spacer = QWidget()
-        status_bar.addWidget(self._status_middle_spacer, stretch=1)
+        # Отслеживание геометрии статус-бара для абсолютного центрирования прогресс-бара
+        status_bar.installEventFilter(self)
 
         # 3. Правый блок метрик с симметричными 1px разделителями
         self._metrics_checked_label = QLabel("Проверено: 0")
@@ -259,6 +257,7 @@ class MainWindow(QMainWindow):
 
         # Индикация запуска
         self._progress_bar.setVisible(True)
+        self._reposition_progress_bar()
         self._progress_bar.setValue(10)
         self._status_text.setText("Сверка документов в фоновом конвейере...")
 
@@ -327,6 +326,31 @@ class MainWindow(QMainWindow):
     def _on_value_copied(self, text: str) -> None:
         """Отображает временное уведомление в статус-баре при копировании реквизита с сохранением отступа."""
         self._show_temporary_status(f"Скопировано в буфер: «{text}»", 3000)
+
+    def _reposition_progress_bar(self) -> None:
+        """Центрирует прогресс-бар строго по горизонтальной оси окна и статус-бара."""
+        status_bar = self.statusBar()
+        if status_bar is None or not hasattr(self, "_progress_bar"):
+            return
+        bar_w = self._progress_bar.width()
+        bar_h = self._progress_bar.height()
+        x = (status_bar.width() - bar_w) // 2
+        y = (status_bar.height() - bar_h) // 2
+        self._progress_bar.setGeometry(x, y, bar_w, bar_h)
+        self._progress_bar.raise_()
+
+    def resizeEvent(self, event) -> None:
+        super().resizeEvent(event)
+        self._reposition_progress_bar()
+
+    def eventFilter(self, watched: QObject, event: QEvent) -> bool:
+        if (
+            hasattr(self, "_progress_bar")
+            and watched == self.statusBar()
+            and event.type() in (QEvent.Type.Resize, QEvent.Type.Show)
+        ):
+            self._reposition_progress_bar()
+        return super().eventFilter(watched, event)
 
     def _show_about_dialog(self) -> None:
         """Открывает модальное информационное окно «О программе»."""

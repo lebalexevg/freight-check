@@ -202,9 +202,13 @@ def test_main_window_integration(qapp: QApplication) -> None:
     assert not window._diff_table.isHidden()
     assert window._diff_table.row_count() > 0
 
-    # Проверяем прогресс-бар: удлиненный (280px) и высотой 6px
+    # Проверяем прогресс-бар: удлиненный (280px), высотой 6px и абсолютно отцентрирован
     assert window._progress_bar.width() == 280
     assert window._progress_bar.height() == 6
+    status_bar = window.statusBar()
+    assert status_bar is not None
+    window._reposition_progress_bar()
+    assert window._progress_bar.x() == (status_bar.width() - 280) // 2
 
     # Проверяем временное уведомление при копировании с сохранением отступа в статусе
     window._on_value_copied("г. Самара")
