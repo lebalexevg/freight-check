@@ -94,7 +94,7 @@ class DiffTableWidget(QWidget):
         empty_layout.setSpacing(8)
 
         empty_title = QLabel("Документы готовы к сверке", self._empty_state_widget)
-        empty_title.setStyleSheet("font-size: 18px; font-weight: 600; color: #0F172A;")
+        empty_title.setObjectName("emptyDiffTitle")
         empty_title.setAlignment(Qt.AlignmentFlag.AlignCenter)
         empty_layout.addWidget(empty_title)
 
@@ -103,9 +103,7 @@ class DiffTableWidget(QWidget):
             "либо выберите готовый сценарий в меню «Демо-сценарии» (Ctrl+D).",
             self._empty_state_widget,
         )
-        empty_desc.setStyleSheet(
-            "font-size: 14px; color: #64748B; text-align: center; line-height: 1.5;"
-        )
+        empty_desc.setObjectName("emptyDiffDesc")
         empty_desc.setAlignment(Qt.AlignmentFlag.AlignCenter)
         empty_layout.addWidget(empty_desc)
 
@@ -145,9 +143,7 @@ class DiffTableWidget(QWidget):
         header.setSortIndicatorShown(False)
         header.setSectionsClickable(True)
 
-        # Белый фон для всей области таблицы (исключает черные артефакты в темной теме ОС)
-        self._table.setStyleSheet("background-color: #FFFFFF;")
-        self._table.viewport().setStyleSheet("background-color: #FFFFFF;")
+        # Белый фон таблицы и viewport задан централизованно в style.qss (QTableView)
 
         # Интерактивное изменение ширины для всех 4 колонок (без горизонтального скролла)
         for i in range(4):

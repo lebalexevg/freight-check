@@ -115,28 +115,24 @@ class DropZoneWidget(QFrame):
 
         # Большая векторная иконка документа Segoe Fluent
         self._doc_icon_label = QLabel(self._empty_widget)
+        self._doc_icon_label.setObjectName("docIconLabel")
         doc_icon = create_segoe_icon(GLYPH_DOCUMENT, QColor("#3B82F6"), base_size=76)
         self._doc_icon_label.setPixmap(doc_icon.pixmap(QSize(76, 76)))
         self._doc_icon_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
-        self._doc_icon_label.setStyleSheet("border: none; background: transparent;")
         empty_layout.addWidget(self._doc_icon_label)
 
         empty_layout.addSpacing(4)
 
         # Заголовок шага
         self._title_label = QLabel(self._title, self._empty_widget)
+        self._title_label.setObjectName("dropZoneTitle")
         self._title_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
-        self._title_label.setStyleSheet(
-            "font-size: 18px; font-weight: 600; color: #0F172A; border: none; background: transparent;"
-        )
         empty_layout.addWidget(self._title_label)
 
         # Описание / подзаголовок роли
         self._hint_label = QLabel(self._subtitle, self._empty_widget)
+        self._hint_label.setObjectName("dropZoneSubtitle")
         self._hint_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
-        self._hint_label.setStyleSheet(
-            "color: #64748B; font-size: 14px; border: none; background: transparent;"
-        )
         self._hint_label.setWordWrap(True)
         empty_layout.addWidget(self._hint_label)
 
@@ -158,20 +154,16 @@ class DropZoneWidget(QFrame):
 
         # Подсказка Drag-and-Drop
         dnd_hint = QLabel("Перетащите файл сюда или нажмите кнопку выше", self._empty_widget)
+        dnd_hint.setObjectName("dropZoneDndHint")
         dnd_hint.setAlignment(Qt.AlignmentFlag.AlignCenter)
-        dnd_hint.setStyleSheet(
-            "color: #94A3B8; font-size: 13px; font-weight: 500; border: none; background: transparent;"
-        )
         empty_layout.addWidget(dnd_hint)
 
         # Форматы
         formats_label = QLabel(
             "Поддерживаются: PDF, XML, XLSX, DOCX, скан (до 50 МБ)", self._empty_widget
         )
+        formats_label.setObjectName("dropZoneFormats")
         formats_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
-        formats_label.setStyleSheet(
-            "color: #94A3B8; font-size: 12px; border: none; background: transparent;"
-        )
         empty_layout.addWidget(formats_label)
 
         self._stacked_layout.addWidget(self._empty_widget)
@@ -184,33 +176,27 @@ class DropZoneWidget(QFrame):
         loaded_layout.setSpacing(10)
 
         self._ready_icon_label = QLabel(self._loaded_expanded_widget)
+        self._ready_icon_label.setObjectName("readyIconLabel")
         ready_icon = create_segoe_icon(GLYPH_CHECK, QColor("#059669"), base_size=76)
         self._ready_icon_label.setPixmap(ready_icon.pixmap(QSize(76, 76)))
         self._ready_icon_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
-        self._ready_icon_label.setStyleSheet("border: none; background: transparent;")
         loaded_layout.addWidget(self._ready_icon_label)
 
         loaded_layout.addSpacing(4)
 
         ready_status = QLabel("Документ прикреплен и готов", self._loaded_expanded_widget)
+        ready_status.setObjectName("readyStatus")
         ready_status.setAlignment(Qt.AlignmentFlag.AlignCenter)
-        ready_status.setStyleSheet(
-            "color: #059669; font-size: 13px; font-weight: 600; border: none; background: transparent;"
-        )
         loaded_layout.addWidget(ready_status)
 
         self._loaded_filename_label = QLabel("", self._loaded_expanded_widget)
+        self._loaded_filename_label.setObjectName("loadedFilenameLabel")
         self._loaded_filename_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
-        self._loaded_filename_label.setStyleSheet(
-            "font-size: 16px; font-weight: 600; color: #0F172A; border: none; background: transparent;"
-        )
         loaded_layout.addWidget(self._loaded_filename_label)
 
         self._loaded_filesize_label = QLabel("", self._loaded_expanded_widget)
+        self._loaded_filesize_label.setObjectName("loadedFilesizeLabel")
         self._loaded_filesize_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
-        self._loaded_filesize_label.setStyleSheet(
-            "color: #64748B; font-size: 13px; border: none; background: transparent;"
-        )
         loaded_layout.addWidget(self._loaded_filesize_label)
 
         loaded_layout.addSpacing(8)
@@ -257,16 +243,11 @@ class DropZoneWidget(QFrame):
         # Текстовый префикс роли слота («Заявка:» или «ЭТрН:»)
         self._role_label = QLabel(self._role_prefix, self._compact_widget)
         self._role_label.setObjectName("slotRoleLabel")
-        self._role_label.setStyleSheet(
-            "color: #64748B; font-size: 13px; font-weight: 500; border: none; background: transparent;"
-        )
         compact_layout.addWidget(self._role_label)
 
         # Имя файла и размер
         self._compact_name_label = QLabel("", self._compact_widget)
-        self._compact_name_label.setStyleSheet(
-            "font-size: 13px; font-weight: 600; color: #0F172A; border: none; background: transparent;"
-        )
+        self._compact_name_label.setObjectName("compactNameLabel")
         compact_layout.addWidget(self._compact_name_label, stretch=1)
 
         # Кнопка замены: плоская и компактная

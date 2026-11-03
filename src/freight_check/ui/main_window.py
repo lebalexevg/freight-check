@@ -115,9 +115,6 @@ class MainWindow(QMainWindow):
         sep = QFrame(status_bar if status_bar is not None else self)
         sep.setObjectName("statusSep")
         sep.setFrameShape(QFrame.Shape.NoFrame)
-        sep.setFixedWidth(1)
-        sep.setFixedHeight(14)
-        sep.setStyleSheet("background-color: #CBD5E1; border: none;")
         return sep
 
     def _setup_status_bar(self) -> None:
@@ -134,7 +131,7 @@ class MainWindow(QMainWindow):
         self._status_text = QLabel(
             "Прикрепите документы или выберите демо-сценарий (Ctrl+D)", status_bar
         )
-        self._status_text.setStyleSheet("color: #64748B; font-size: 12px;")
+        self._status_text.setObjectName("statusText")
         self._status_text.setContentsMargins(0, 0, 0, 0)
         status_bar.addWidget(self._status_text, stretch=1)
 
@@ -152,9 +149,6 @@ class MainWindow(QMainWindow):
         # 3. Правый блок метрик с симметричными 1px разделителями
         self._metrics_checked_label = QLabel("Проверено: 0", status_bar)
         self._metrics_checked_label.setObjectName("metricsCheckedLabel")
-        self._metrics_checked_label.setStyleSheet(
-            "color: #64748B; font-size: 12px; font-weight: 500;"
-        )
         self._metrics_checked_label.setContentsMargins(0, 0, 0, 0)
         status_bar.addPermanentWidget(self._metrics_checked_label)
 
@@ -163,7 +157,6 @@ class MainWindow(QMainWindow):
 
         self._metrics_time_label = QLabel("Время: 0 мс", status_bar)
         self._metrics_time_label.setObjectName("metricsTimeLabel")
-        self._metrics_time_label.setStyleSheet("color: #64748B; font-size: 12px; font-weight: 500;")
         self._metrics_time_label.setContentsMargins(0, 0, 0, 0)
         status_bar.addPermanentWidget(self._metrics_time_label)
 
@@ -193,11 +186,15 @@ class MainWindow(QMainWindow):
         self._about_shortcut.activated.connect(self._show_about_dialog)
 
     def _apply_styles(self) -> None:
-        """Загружает стили из style.qss."""
-        style_path = get_stylesheet_path()
-        if style_path.exists():
-            with open(style_path, encoding="utf-8") as f:
-                self.setStyleSheet(f.read())
+        """Загрузка внешней таблицы стилей QSS на уровне приложения."""
+        qss_path = get_stylesheet_path()
+        if qss_path.exists():
+            content = qss_path.read_text(encoding="utf-8")
+            app = QApplication.instance()
+            if isinstance(app, QApplication):
+                app.setStyleSheet(content)
+            else:
+                self.setStyleSheet(content)
 
     def _update_view_state(self) -> None:
         """Переключает видимость и растягивание виджетов между Empty и Loaded состояниями."""

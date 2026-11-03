@@ -67,35 +67,35 @@ class SummaryBarWidget(QFrame):
         self._status_icon.setObjectName("summaryStatusIcon")
         self._status_icon.setFixedSize(22, 22)
         self._status_icon.setAlignment(Qt.AlignmentFlag.AlignCenter)
-        self._status_icon.setStyleSheet("border: none; background: transparent;")
         self._status_icon.setVisible(False)
         layout.addWidget(self._status_icon)
 
         self._status_badge = QLabel("Ожидание документов", self)
         self._status_badge.setObjectName("summaryStatusText")
-        self._status_badge.setStyleSheet(
-            "color: #94A3B8; font-size: 13px; font-weight: 600; border: none; background: transparent;"
-        )
+        self._status_badge.setProperty("status", "idle")
         layout.addWidget(self._status_badge)
 
         # Тонкий вертикальный разделитель |
         sep1 = QFrame(self)
+        sep1.setObjectName("summarySep")
         sep1.setFixedWidth(1)
         sep1.setFixedHeight(18)
-        sep1.setStyleSheet("background-color: #CBD5E1;")
         layout.addWidget(sep1)
 
         # 2. Строгие текстовые метрики через разделитель
         self._critical_label = QLabel("Критических: 0", self)
-        self._critical_label.setStyleSheet("color: #94A3B8; font-size: 13px; font-weight: 500;")
+        self._critical_label.setObjectName("critCountLabel")
+        self._critical_label.setProperty("hasValue", "false")
         layout.addWidget(self._critical_label)
 
         self._warning_label = QLabel("Предупреждений: 0", self)
-        self._warning_label.setStyleSheet("color: #94A3B8; font-size: 13px; font-weight: 500;")
+        self._warning_label.setObjectName("warnCountLabel")
+        self._warning_label.setProperty("hasValue", "false")
         layout.addWidget(self._warning_label)
 
         self._match_label = QLabel("Совпадений: 0", self)
-        self._match_label.setStyleSheet("color: #94A3B8; font-size: 13px; font-weight: 500;")
+        self._match_label.setObjectName("matchCountLabel")
+        self._match_label.setProperty("hasValue", "false")
         layout.addWidget(self._match_label)
 
         layout.addStretch(1)
@@ -108,9 +108,9 @@ class SummaryBarWidget(QFrame):
         layout.addWidget(self._only_diffs_cb)
 
         sep2 = QFrame(self)
+        sep2.setObjectName("summarySep")
         sep2.setFixedWidth(1)
         sep2.setFixedHeight(18)
-        sep2.setStyleSheet("background-color: #CBD5E1;")
         layout.addWidget(sep2)
 
         # Кнопка меню тестовых демо-сценариев
@@ -173,16 +173,16 @@ class SummaryBarWidget(QFrame):
             self._status_icon.setPixmap(icon.pixmap(QSize(20, 20)))
             self._status_icon.setVisible(True)
             self._status_badge.setText(text)
-            self._status_badge.setStyleSheet(
-                f"color: {color}; font-size: 13px; font-weight: 600; border: none; background: transparent;"
-            )
+            status_val = status.value.lower()
+            self._status_badge.setProperty("status", status_val)
         else:
             self._status_icon.clear()
             self._status_icon.setVisible(False)
             self._status_badge.setText("Неизвестный статус")
-            self._status_badge.setStyleSheet(
-                "color: #64748B; font-size: 13px; font-weight: 600; border: none; background: transparent;"
-            )
+            self._status_badge.setProperty("status", "idle")
+
+        self._status_badge.style().unpolish(self._status_badge)
+        self._status_badge.style().polish(self._status_badge)
 
         critical_count = sum(1 for r in report.rows if r.status == ValidationStatus.CRITICAL)
         warning_count = sum(1 for r in report.rows if r.status == ValidationStatus.WARNING)
@@ -192,26 +192,18 @@ class SummaryBarWidget(QFrame):
         self._warning_label.setText(f"Предупреждений: {warning_count}")
         self._match_label.setText(f"Совпадений: {match_count}")
 
-        # Подсвечиваем цветным текстом только ненулевые значения
-        crit_style = (
-            "color: #DC2626; font-size: 13px; font-weight: 600;"
-            if critical_count > 0
-            else "color: #94A3B8; font-size: 13px; font-weight: 500;"
-        )
-        warn_style = (
-            "color: #D97706; font-size: 13px; font-weight: 600;"
-            if warning_count > 0
-            else "color: #94A3B8; font-size: 13px; font-weight: 500;"
-        )
-        match_style = (
-            "color: #059669; font-size: 13px; font-weight: 600;"
-            if match_count > 0
-            else "color: #94A3B8; font-size: 13px; font-weight: 500;"
-        )
+        # Подсвечиваем цветным текстом через динамические QSS свойства
+        self._critical_label.setProperty("hasValue", "true" if critical_count > 0 else "false")
+        self._critical_label.style().unpolish(self._critical_label)
+        self._critical_label.style().polish(self._critical_label)
 
-        self._critical_label.setStyleSheet(crit_style)
-        self._warning_label.setStyleSheet(warn_style)
-        self._match_label.setStyleSheet(match_style)
+        self._warning_label.setProperty("hasValue", "true" if warning_count > 0 else "false")
+        self._warning_label.style().unpolish(self._warning_label)
+        self._warning_label.style().polish(self._warning_label)
+
+        self._match_label.setProperty("hasValue", "true" if match_count > 0 else "false")
+        self._match_label.style().unpolish(self._match_label)
+        self._match_label.style().polish(self._match_label)
 
         layout = self.layout()
         if layout is not None:
@@ -223,16 +215,25 @@ class SummaryBarWidget(QFrame):
         self._status_icon.clear()
         self._status_icon.setVisible(False)
         self._status_badge.setText("Ожидание документов")
-        self._status_badge.setStyleSheet(
-            "color: #94A3B8; font-size: 13px; font-weight: 500; border: none; background: transparent;"
-        )
+        self._status_badge.setProperty("status", "idle")
+        self._status_badge.style().unpolish(self._status_badge)
+        self._status_badge.style().polish(self._status_badge)
+
         self._critical_label.setText("Критических: 0")
         self._warning_label.setText("Предупреждений: 0")
         self._match_label.setText("Совпадений: 0")
 
-        self._critical_label.setStyleSheet("color: #94A3B8; font-size: 13px; font-weight: 500;")
-        self._warning_label.setStyleSheet("color: #94A3B8; font-size: 13px; font-weight: 500;")
-        self._match_label.setStyleSheet("color: #94A3B8; font-size: 13px; font-weight: 500;")
+        self._critical_label.setProperty("hasValue", "false")
+        self._critical_label.style().unpolish(self._critical_label)
+        self._critical_label.style().polish(self._critical_label)
+
+        self._warning_label.setProperty("hasValue", "false")
+        self._warning_label.style().unpolish(self._warning_label)
+        self._warning_label.style().polish(self._warning_label)
+
+        self._match_label.setProperty("hasValue", "false")
+        self._match_label.style().unpolish(self._match_label)
+        self._match_label.style().polish(self._match_label)
 
         self._only_diffs_cb.setChecked(False)
 

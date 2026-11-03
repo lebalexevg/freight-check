@@ -446,3 +446,220 @@ QPushButton#aboutCloseBtn:hover {
 QPushButton#aboutCloseBtn:pressed {
     background-color: #E2E8F0;
 }
+
+/* ===================================================================
+   Централизованные правила оформления компонентов (Рефакторинг Фазы 2)
+   =================================================================== */
+
+/* Элементы модального окна «О программе» */
+QLabel#aboutTitleLabel {
+    color: #0F172A;
+    font-size: 20px;
+    font-weight: bold;
+}
+
+QLabel#aboutVersionLabel {
+    color: #64748B;
+    font-size: 13px;
+    font-weight: 600;
+}
+
+QLabel#aboutSubtitleLabel {
+    color: #475569;
+    font-size: 13px;
+    font-weight: 500;
+}
+
+QFrame#aboutSep {
+    background-color: #CBD5E1;
+    border: none;
+    min-height: 1px;
+    max-height: 1px;
+    height: 1px;
+}
+
+QLabel#aboutDescLabel {
+    color: #334155;
+    font-size: 13px;
+}
+
+QLabel#aboutFormatsTitle {
+    color: #0F172A;
+    font-size: 13px;
+    font-weight: 600;
+}
+
+QLabel#aboutFormatItem {
+    color: #334155;
+    font-size: 13px;
+}
+
+QLabel#aboutTechLabel {
+    color: #64748B;
+    font-size: 12px;
+}
+
+/* Элементы инфо-полосы сводки (SummaryBar) */
+QLabel#summaryStatusIcon {
+    border: none;
+    background: transparent;
+}
+
+QLabel#summaryStatusText {
+    font-size: 13px;
+    border: none;
+    background: transparent;
+}
+
+QLabel#summaryStatusText[status="idle"] {
+    color: #94A3B8;
+    font-weight: 500;
+}
+
+QLabel#summaryStatusText[status="critical"] {
+    color: #EF4444;
+    font-weight: 600;
+}
+
+QLabel#summaryStatusText[status="warning"] {
+    color: #F59E0B;
+    font-weight: 600;
+}
+
+QLabel#summaryStatusText[status="uncertain"] {
+    color: #64748B;
+    font-weight: 600;
+}
+
+QLabel#summaryStatusText[status="match"] {
+    color: #10B981;
+    font-weight: 600;
+}
+
+QFrame#summarySep {
+    background-color: #CBD5E1;
+    border: none;
+    min-width: 1px;
+    max-width: 1px;
+    width: 1px;
+    min-height: 18px;
+    max-height: 18px;
+    height: 18px;
+}
+
+QLabel#critCountLabel,
+QLabel#warnCountLabel,
+QLabel#matchCountLabel {
+    font-size: 13px;
+    color: #94A3B8;
+    font-weight: 500;
+}
+
+QLabel#critCountLabel[hasValue="true"] {
+    color: #DC2626;
+    font-weight: 600;
+}
+
+QLabel#warnCountLabel[hasValue="true"] {
+    color: #D97706;
+    font-weight: 600;
+}
+
+QLabel#matchCountLabel[hasValue="true"] {
+    color: #059669;
+    font-weight: 600;
+}
+
+/* Элементы карточек документов (DropZone) */
+QLabel#docIconLabel,
+QLabel#readyIconLabel {
+    border: none;
+    background: transparent;
+}
+
+QLabel#dropZoneTitle {
+    font-size: 18px;
+    font-weight: 600;
+    color: #0F172A;
+    border: none;
+    background: transparent;
+}
+
+QLabel#dropZoneSubtitle {
+    color: #64748B;
+    font-size: 14px;
+    border: none;
+    background: transparent;
+}
+
+QLabel#dropZoneDndHint {
+    color: #94A3B8;
+    font-size: 13px;
+    font-weight: 500;
+    border: none;
+    background: transparent;
+}
+
+QLabel#dropZoneFormats {
+    color: #94A3B8;
+    font-size: 12px;
+    border: none;
+    background: transparent;
+}
+
+QLabel#readyStatus {
+    color: #059669;
+    font-size: 13px;
+    font-weight: 600;
+    border: none;
+    background: transparent;
+}
+
+QLabel#loadedFilenameLabel {
+    font-size: 16px;
+    font-weight: 600;
+    color: #0F172A;
+    border: none;
+    background: transparent;
+}
+
+QLabel#loadedFilesizeLabel {
+    color: #64748B;
+    font-size: 13px;
+    border: none;
+    background: transparent;
+}
+
+QLabel#slotRoleLabel {
+    color: #64748B;
+    font-size: 13px;
+    font-weight: 500;
+    border: none;
+    background: transparent;
+}
+
+QLabel#compactNameLabel {
+    font-size: 13px;
+    font-weight: 600;
+    color: #0F172A;
+    border: none;
+    background: transparent;
+}
+
+/* Элементы заглушки пустого состояния таблицы (DiffTable) */
+QLabel#emptyDiffTitle {
+    font-size: 18px;
+    font-weight: 600;
+    color: #0F172A;
+}
+
+QLabel#emptyDiffDesc {
+    font-size: 14px;
+    color: #64748B;
+}
+
+/* Левый информационный текст статус-бара */
+QLabel#statusText {
+    color: #64748B;
+    font-size: 12px;
+}
