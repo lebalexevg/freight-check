@@ -79,35 +79,35 @@ class SummaryBarWidget(QFrame):
         layout.addWidget(self._status_badge)
 
         # Тонкий вертикальный разделитель |
-        sep1 = QFrame()
+        sep1 = QFrame(self)
         sep1.setFixedWidth(1)
         sep1.setFixedHeight(18)
         sep1.setStyleSheet("background-color: #CBD5E1;")
         layout.addWidget(sep1)
 
         # 2. Строгие текстовые метрики через разделитель
-        self._critical_label = QLabel("Критических: 0")
+        self._critical_label = QLabel("Критических: 0", self)
         self._critical_label.setStyleSheet("color: #94A3B8; font-size: 13px; font-weight: 500;")
         layout.addWidget(self._critical_label)
 
-        self._warning_label = QLabel("Предупреждений: 0")
+        self._warning_label = QLabel("Предупреждений: 0", self)
         self._warning_label.setStyleSheet("color: #94A3B8; font-size: 13px; font-weight: 500;")
         layout.addWidget(self._warning_label)
 
-        self._match_label = QLabel("Совпадений: 0")
+        self._match_label = QLabel("Совпадений: 0", self)
         self._match_label.setStyleSheet("color: #94A3B8; font-size: 13px; font-weight: 500;")
         layout.addWidget(self._match_label)
 
         layout.addStretch(1)
 
         # 3. Правая группа контролов: Чекбокс | Меню демо | Очистить всё
-        self._only_diffs_cb = QCheckBox("Только расхождения")
+        self._only_diffs_cb = QCheckBox("Только расхождения", self)
         self._only_diffs_cb.setObjectName("onlyDiffsCheckBox")
         self._only_diffs_cb.setCursor(Qt.CursorShape.PointingHandCursor)
         self._only_diffs_cb.toggled.connect(self.filter_only_diffs_changed.emit)
         layout.addWidget(self._only_diffs_cb)
 
-        sep2 = QFrame()
+        sep2 = QFrame(self)
         sep2.setFixedWidth(1)
         sep2.setFixedHeight(18)
         sep2.setStyleSheet("background-color: #CBD5E1;")
@@ -129,7 +129,7 @@ class SummaryBarWidget(QFrame):
         layout.addWidget(self._demo_menu_btn)
 
         # Кнопка сброса сессии
-        self._reset_btn = QPushButton("  Очистить всё")
+        self._reset_btn = QPushButton("  Очистить всё", self)
         self._reset_btn.setObjectName("toolbarResetBtn")
         self._reset_btn.setIcon(create_segoe_icon(GLYPH_TRASH, QColor("#64748B"), 12, y_offset=0.5))
         self._reset_btn.setIconSize(QSize(12, 12))

@@ -14,7 +14,7 @@
 from pathlib import Path
 
 from PySide6.QtCore import QEvent, QObject, Qt, QTimer
-from PySide6.QtGui import QKeySequence, QShortcut
+from PySide6.QtGui import QCloseEvent, QKeySequence, QShortcut
 from PySide6.QtWidgets import (
     QApplication,
     QCheckBox,
@@ -69,7 +69,9 @@ class MainWindow(QMainWindow):
         self._worker: ValidationWorker | None = None
         self._current_report: SessionReport | None = None
         self._selected_scenario_key: str | None = None
-        self._status_restore_timer: QTimer | None = None
+        self._status_restore_timer = QTimer(self)
+        self._status_restore_timer.setSingleShot(True)
+        self._status_restore_timer.timeout.connect(self._restore_status_text)
         self._saved_status_text: str | None = None
 
         self._setup_ui()
@@ -109,7 +111,8 @@ class MainWindow(QMainWindow):
 
     def _create_status_sep(self) -> QFrame:
         """Создает тонкий 1px разделитель статус-бара без утолщения шрифта."""
-        sep = QFrame(self)
+        status_bar = self.statusBar()
+        sep = QFrame(status_bar if status_bar is not None else self)
         sep.setObjectName("statusSep")
         sep.setFrameShape(QFrame.Shape.NoFrame)
         sep.setFixedWidth(1)
@@ -128,7 +131,9 @@ class MainWindow(QMainWindow):
         status_bar.setContentsMargins(16, 0, 16, 0)
 
         # 1. Левый информационный текст с чистым позиционированием
-        self._status_text = QLabel("Прикрепите документы или выберите демо-сценарий (Ctrl+D)")
+        self._status_text = QLabel(
+            "Прикрепите документы или выберите демо-сценарий (Ctrl+D)", status_bar
+        )
         self._status_text.setStyleSheet("color: #64748B; font-size: 12px;")
         self._status_text.setContentsMargins(0, 0, 0, 0)
         status_bar.addWidget(self._status_text, stretch=1)
@@ -145,7 +150,7 @@ class MainWindow(QMainWindow):
         status_bar.installEventFilter(self)
 
         # 3. Правый блок метрик с симметричными 1px разделителями
-        self._metrics_checked_label = QLabel("Проверено: 0")
+        self._metrics_checked_label = QLabel("Проверено: 0", status_bar)
         self._metrics_checked_label.setObjectName("metricsCheckedLabel")
         self._metrics_checked_label.setStyleSheet(
             "color: #64748B; font-size: 12px; font-weight: 500;"
@@ -156,7 +161,7 @@ class MainWindow(QMainWindow):
         sep1 = self._create_status_sep()
         status_bar.addPermanentWidget(sep1)
 
-        self._metrics_time_label = QLabel("Время: 0 мс")
+        self._metrics_time_label = QLabel("Время: 0 мс", status_bar)
         self._metrics_time_label.setObjectName("metricsTimeLabel")
         self._metrics_time_label.setStyleSheet("color: #64748B; font-size: 12px; font-weight: 500;")
         self._metrics_time_label.setContentsMargins(0, 0, 0, 0)
@@ -166,7 +171,7 @@ class MainWindow(QMainWindow):
         status_bar.addPermanentWidget(sep2)
 
         # Кликабельная кнопка версии для вызова окна «О программе»
-        self._version_btn = QPushButton(f"v{APP_VERSION}")
+        self._version_btn = QPushButton(f"v{APP_VERSION}", status_bar)
         self._version_btn.setObjectName("statusVersionBtn")
         self._version_btn.setCursor(Qt.CursorShape.PointingHandCursor)
         self._version_btn.setToolTip("О программе и справка (F1)")
@@ -304,18 +309,13 @@ class MainWindow(QMainWindow):
 
     def _show_temporary_status(self, message: str, timeout_ms: int = 3000) -> None:
         """Отображает временное уведомление в основном лейбле статус-бара с сохранением отступа."""
-        if self._status_restore_timer is not None and self._status_restore_timer.isActive():
+        if self._status_restore_timer.isActive():
             self._status_restore_timer.stop()
         elif self._saved_status_text is None:
             self._saved_status_text = self._status_text.text()
 
         self._status_text.setText(message)
-
-        timer = QTimer(self)
-        timer.setSingleShot(True)
-        timer.timeout.connect(self._restore_status_text)
-        self._status_restore_timer = timer
-        timer.start(timeout_ms)
+        self._status_restore_timer.start(timeout_ms)
 
     def _restore_status_text(self) -> None:
         """Восстанавливает исходный текст статус-бара после временного уведомления."""
@@ -351,6 +351,13 @@ class MainWindow(QMainWindow):
         ):
             self._reposition_progress_bar()
         return super().eventFilter(watched, event)
+
+    def closeEvent(self, event: QCloseEvent) -> None:
+        """Безопасное завершение фоновых потоков при закрытии окна."""
+        if self._worker is not None and self._worker.isRunning():
+            self._worker.requestInterruption()
+            self._worker.wait(2000)
+        super().closeEvent(event)
 
     def _show_about_dialog(self) -> None:
         """Открывает модальное информационное окно «О программе»."""

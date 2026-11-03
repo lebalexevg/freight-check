@@ -2,7 +2,7 @@
 
 import time
 
-from PySide6.QtCore import QThread, Signal
+from PySide6.QtCore import QObject, QThread, Signal
 
 from freight_check.contracts import SessionReport
 from freight_check.ui.mock_data import (
@@ -27,7 +27,7 @@ class ValidationWorker(QThread):
         order_path: str,
         waybill_path: str,
         scenario_key: str | None = None,
-        parent: QThread | None = None,
+        parent: QObject | None = None,
     ) -> None:
         super().__init__(parent)
         self._order_path = order_path

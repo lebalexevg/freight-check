@@ -88,19 +88,20 @@ class DiffTableWidget(QWidget):
         self._stacked_layout = QStackedLayout()
 
         # 1. Заглушка пустого состояния (Empty State)
-        self._empty_state_widget = QWidget()
+        self._empty_state_widget = QWidget(self)
         empty_layout = QVBoxLayout(self._empty_state_widget)
         empty_layout.setAlignment(Qt.AlignmentFlag.AlignCenter)
         empty_layout.setSpacing(8)
 
-        empty_title = QLabel("Документы готовы к сверке")
+        empty_title = QLabel("Документы готовы к сверке", self._empty_state_widget)
         empty_title.setStyleSheet("font-size: 18px; font-weight: 600; color: #0F172A;")
         empty_title.setAlignment(Qt.AlignmentFlag.AlignCenter)
         empty_layout.addWidget(empty_title)
 
         empty_desc = QLabel(
             "Перетащите заявку и черновик ЭТрН в слоты выше,\n"
-            "либо выберите готовый сценарий в меню «Демо-сценарии» (Ctrl+D)."
+            "либо выберите готовый сценарий в меню «Демо-сценарии» (Ctrl+D).",
+            self._empty_state_widget,
         )
         empty_desc.setStyleSheet(
             "font-size: 14px; color: #64748B; text-align: center; line-height: 1.5;"
