@@ -35,19 +35,14 @@ from freight_check.ui.diff_table import DiffTableWidget
 from freight_check.ui.drop_zone import DocumentSlotsWidget, DropZoneWidget
 from freight_check.ui.icons import get_app_icon
 from freight_check.ui.mock_data import get_all_scenarios
+from freight_check.ui.resources import get_resource_path
 from freight_check.ui.summary_bar import SummaryBarWidget
 from freight_check.ui.worker import ValidationWorker
 
 
 def get_stylesheet_path() -> Path:
-    """Определяет абсолютный путь к таблице стилей style.qss."""
-    current_file = Path(__file__).resolve()
-    # ../../../assets/styles/style.qss
-    project_root = current_file.parents[3]
-    candidate = project_root / "assets" / "styles" / "style.qss"
-    if candidate.exists():
-        return candidate
-    return Path("assets/styles/style.qss")
+    """Определяет абсолютный путь к таблице стилей style.qss с поддержкой PyInstaller."""
+    return get_resource_path("assets/styles/style.qss")
 
 
 class MainWindow(QMainWindow):
@@ -382,30 +377,30 @@ class MainWindow(QMainWindow):
     def _metrics_label(self) -> QLabel:
         return self._metrics_checked_label
 
-    # Свойства обратной совместимости
+    # Свойства обратной совместимости для тестов (делегируют в публичный API компонентов)
     @property
     def _demo_menu_btn(self) -> QToolButton:
-        return self._summary_bar._demo_menu_btn
+        return self._summary_bar.demo_button
 
     @property
     def _reset_btn(self) -> QPushButton:
-        return self._summary_bar._reset_btn
+        return self._summary_bar.reset_button
 
     @property
     def _about_btn(self) -> QPushButton:
-        return self._summary_bar._about_btn
+        return self._summary_bar.about_button
 
     @property
     def _only_diffs_cb(self) -> QCheckBox:
-        return self._summary_bar._only_diffs_cb
+        return self._summary_bar.only_diffs_checkbox
 
     @property
     def _order_drop_zone(self) -> DropZoneWidget:
-        return self._doc_slots._order_slot
+        return self._doc_slots.order_slot
 
     @property
     def _waybill_drop_zone(self) -> DropZoneWidget:
-        return self._doc_slots._waybill_slot
+        return self._doc_slots.waybill_slot
 
     @property
     def _kpi_banner(self) -> QWidget:

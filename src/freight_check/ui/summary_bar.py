@@ -6,11 +6,12 @@
 Справа: чекбокс «Только расхождения», меню «Демо-сценарии» и кнопка «Очистить всё»
 """
 
+import contextlib
 from collections.abc import Iterable
 from typing import Any
 
 from PySide6.QtCore import QSize, Qt, Signal
-from PySide6.QtGui import QAction, QColor
+from PySide6.QtGui import QColor
 from PySide6.QtWidgets import (
     QCheckBox,
     QFrame,
@@ -151,14 +152,42 @@ class SummaryBarWidget(QFrame):
         self._about_btn.clicked.connect(self.about_requested.emit)
         layout.addWidget(self._about_btn)
 
+    @property
+    def reset_button(self) -> QPushButton:
+        """Кнопка сброса сессии."""
+        return self._reset_btn
+
+    @property
+    def demo_button(self) -> QToolButton:
+        """Кнопка меню демо-сценариев."""
+        return self._demo_menu_btn
+
+    @property
+    def about_button(self) -> QPushButton:
+        """Кнопка вызова окна «О программе»."""
+        return self._about_btn
+
+    @property
+    def only_diffs_checkbox(self) -> QCheckBox:
+        """Чекбокс фильтрации только расхождений."""
+        return self._only_diffs_cb
+
     def setup_scenarios(self, scenarios: Iterable[str], callback: Any) -> None:
-        """Настраивает выпадающее меню эталонных сценариев."""
-        menu = QMenu(self._demo_menu_btn)
+        """Настраивает выпадающее меню эталонных сценариев без накопления QAction."""
+        menu = self._demo_menu_btn.menu()
+        if menu is None:
+            menu = QMenu(self._demo_menu_btn)
+            self._demo_menu_btn.setMenu(menu)
+        else:
+            menu.clear()
+            with contextlib.suppress(RuntimeError, TypeError):
+                menu.triggered.disconnect()
+
         for key in scenarios:
-            action = QAction(key, self)
-            action.triggered.connect(lambda checked=False, k=key: callback(k))
-            menu.addAction(action)
-        self._demo_menu_btn.setMenu(menu)
+            action = menu.addAction(key)
+            action.setData(key)
+
+        menu.triggered.connect(lambda action: callback(str(action.data())))
 
     def show_demo_menu(self) -> None:
         """Открывает меню сценариев по горячей клавише (Ctrl+D)."""

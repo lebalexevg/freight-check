@@ -476,6 +476,16 @@ class DocumentSlotsWidget(QWidget):
     files_ready = Signal(str, str)
     files_changed = Signal()
 
+    @property
+    def order_slot(self) -> DropZoneWidget:
+        """Слот входящей заявки на перевозку."""
+        return self._order_slot
+
+    @property
+    def waybill_slot(self) -> DropZoneWidget:
+        """Слот черновика ЭТрН / накладной."""
+        return self._waybill_slot
+
     def __init__(self, parent: QWidget | None = None) -> None:
         super().__init__(parent)
         self.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Expanding)

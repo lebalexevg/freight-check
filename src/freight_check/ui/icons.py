@@ -17,6 +17,8 @@ from PySide6.QtGui import (
     QPixmap,
 )
 
+from freight_check.ui.resources import get_resource_path
+
 SEGOE_FONT_FAMILY: str = "Segoe Fluent Icons"
 SEGOE_FALLBACK_FAMILY: str = "Segoe MDL2 Assets"
 
@@ -95,19 +97,17 @@ _APP_ICON_CACHE: QIcon | None = None
 
 
 def get_app_icon_path() -> Path:
-    """Определяет путь к файлу иконки приложения (.ico или .png)."""
-    current_file = Path(__file__).resolve()
-    project_root = current_file.parents[3]
-    candidate_ico = project_root / "assets" / "icons" / "app_icon.ico"
+    """Определяет путь к файлу иконки приложения (.ico или .png) с поддержкой PyInstaller."""
+    candidate_ico = get_resource_path("assets/icons/app_icon.ico")
     if candidate_ico.exists():
         return candidate_ico
-    candidate_png = project_root / "assets" / "icons" / "app_icon.png"
+    candidate_png = get_resource_path("assets/icons/app_icon.png")
     if candidate_png.exists():
         return candidate_png
-    candidate_svg = project_root / "assets" / "icons" / "app_icon.svg"
+    candidate_svg = get_resource_path("assets/icons/app_icon.svg")
     if candidate_svg.exists():
         return candidate_svg
-    return Path("assets/icons/app_icon.png")
+    return candidate_ico
 
 
 def get_app_icon() -> QIcon:
