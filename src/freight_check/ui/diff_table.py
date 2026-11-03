@@ -1,9 +1,4 @@
-"""Виджет таблицы сопоставления реквизитов (DiffTableWidget) на базе Qt MVC.
-
-Использует QTableView, ValidationTableModel, ValidationSortFilterProxyModel,
-кастомные делегаты отрисовки статусов и посимвольного диффа, а также
-поддерживает копирование значения реквизита в буфер обмена по двойному клику.
-"""
+"""Виджет таблицы сопоставления реквизитов."""
 
 from collections.abc import Sequence
 
@@ -32,7 +27,7 @@ from freight_check.ui.models import (
 
 
 class DiffTableView(QTableView):
-    """Таблица результатов со снятием выделения по клику в пустоту, повторному клику и Escape."""
+    """Таблица результатов сопоставления."""
 
     def mousePressEvent(self, event) -> None:
         pos = event.position().toPoint() if hasattr(event, "position") else event.pos()
@@ -87,7 +82,7 @@ class DiffTableWidget(QWidget):
 
         self._stacked_layout = QStackedLayout()
 
-        # 1. Заглушка пустого состояния (Empty State)
+        # Пустое состояние
         self._empty_state_widget = QWidget(self)
         empty_layout = QVBoxLayout(self._empty_state_widget)
         empty_layout.setAlignment(Qt.AlignmentFlag.AlignCenter)
@@ -109,7 +104,7 @@ class DiffTableWidget(QWidget):
 
         self._stacked_layout.addWidget(self._empty_state_widget)
 
-        # 2. Таблица QTableView (MVC)
+        # Таблица результатов
         self._source_model = ValidationTableModel(parent=self)
         self._proxy_model = ValidationSortFilterProxyModel(parent=self)
         self._proxy_model.setSourceModel(self._source_model)
@@ -136,7 +131,7 @@ class DiffTableWidget(QWidget):
         self._table.setWordWrap(False)
         self._table.setTextElideMode(Qt.TextElideMode.ElideRight)
 
-        # Высота строк (38px) и заголовка (38px)
+        # Размеры строк и заголовка
         self._table.verticalHeader().setDefaultSectionSize(42)
         header = self._table.horizontalHeader()
         header.setFixedHeight(40)
@@ -145,7 +140,7 @@ class DiffTableWidget(QWidget):
 
         # Белый фон таблицы и viewport задан централизованно в style.qss (QTableView)
 
-        # Интерактивное изменение ширины для всех 4 колонок (без горизонтального скролла)
+        # Настройка колонок
         for i in range(4):
             header.setSectionResizeMode(i, QHeaderView.ResizeMode.Interactive)
 

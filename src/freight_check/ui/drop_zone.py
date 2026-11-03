@@ -1,11 +1,4 @@
-"""Виджеты зоны загрузки документов и адаптивная панель слотов (DropZone / DocumentSlots).
-
-Поддерживает два адаптивных состояния:
-1. Empty State (файлы не загружены): полноэкранные просторные Drag-and-Drop слоты
-   с крупными векторными Segoe-иконками документов, подсказками и кнопками выбора.
-2. Loaded State (оба файла выбраны): ультракомпактная однострочная сплит-панель (36px)
-   с префиксами ролей («Заявка:» / «ЭТрН:»), кнопками замены/удаления и прямым Drag-and-Drop.
-"""
+"""Зоны загрузки и выбора документов."""
 
 from pathlib import Path
 
@@ -113,7 +106,7 @@ class DropZoneWidget(QFrame):
         empty_layout.setAlignment(Qt.AlignmentFlag.AlignCenter)
         empty_layout.setSpacing(10)
 
-        # Большая векторная иконка документа Segoe Fluent
+        # Иконка документа
         self._doc_icon_label = QLabel(self._empty_widget)
         self._doc_icon_label.setObjectName("docIconLabel")
         doc_icon = create_segoe_icon(GLYPH_DOCUMENT, QColor("#3B82F6"), base_size=76)
@@ -168,7 +161,7 @@ class DropZoneWidget(QFrame):
 
         self._stacked_layout.addWidget(self._empty_widget)
 
-        # 2. Полноразмерный вид при частичной загрузке (Loaded Expanded State — файл выбран, ждем второй)
+        # Вид с выбранным файлом
         self._loaded_expanded_widget = QWidget(self)
         loaded_layout = QVBoxLayout(self._loaded_expanded_widget)
         loaded_layout.setContentsMargins(32, 24, 32, 24)
@@ -201,7 +194,7 @@ class DropZoneWidget(QFrame):
 
         loaded_layout.addSpacing(8)
 
-        # Кнопки действий друг под другом
+        # Кнопки действий
         action_col = QVBoxLayout()
         action_col.setSpacing(8)
         action_col.setAlignment(Qt.AlignmentFlag.AlignCenter)
@@ -233,14 +226,14 @@ class DropZoneWidget(QFrame):
         loaded_layout.addLayout(action_col)
         self._stacked_layout.addWidget(self._loaded_expanded_widget)
 
-        # 3. Компактный однострочный вид (Compact / Loaded State — 48px)
+        # Компактный вид
         self._compact_widget = QWidget(self)
         compact_layout = QHBoxLayout(self._compact_widget)
         compact_layout.setContentsMargins(16, 8, 16, 8)
         compact_layout.setAlignment(Qt.AlignmentFlag.AlignVCenter)
         compact_layout.setSpacing(10)
 
-        # Текстовый префикс роли слота («Заявка:» или «ЭТрН:»)
+        # Префикс роли
         self._role_label = QLabel(self._role_prefix, self._compact_widget)
         self._role_label.setObjectName("slotRoleLabel")
         compact_layout.addWidget(self._role_label)
@@ -250,7 +243,7 @@ class DropZoneWidget(QFrame):
         self._compact_name_label.setObjectName("compactNameLabel")
         compact_layout.addWidget(self._compact_name_label, stretch=1)
 
-        # Кнопка замены: плоская и компактная
+        # Кнопка замены
         self._replace_button = QPushButton("  Заменить", self._compact_widget)
         self._replace_button.setObjectName("compactActionBtn")
         self._replace_button.setIcon(
@@ -262,7 +255,7 @@ class DropZoneWidget(QFrame):
         self._replace_button.clicked.connect(self._on_browse_clicked)
         compact_layout.addWidget(self._replace_button)
 
-        # Кнопка удаления: плоская и компактная
+        # Кнопка удаления
         self._clear_button = QPushButton(self._compact_widget)
         self._clear_button.setObjectName("compactClearBtn")
         self._clear_button.setIcon(
@@ -351,12 +344,7 @@ class DropZoneWidget(QFrame):
             self.update()
 
     def paintEvent(self, event: QPaintEvent) -> None:
-        """Отрисовывает математически точный 1px/2px пунктир для развернутого пустого слота.
-
-        Устраняет дефект встроенного QSS-рендерера Qt, где правая и нижняя границы
-        пунктира из-за целочисленного округления ошибочно рендерятся толщиной 2px.
-        При наведении курсора увеличивает толщину рамки на 1 пункт (с 1px до 2px).
-        """
+        """Отрисовывает пунктирную границу для пустого слота."""
         super().paintEvent(event)
         if not self._is_compact and not self.has_file():
             painter = QPainter(self)
@@ -466,12 +454,7 @@ class DropZoneWidget(QFrame):
 
 
 class DocumentSlotsWidget(QWidget):
-    """Адаптивный контейнер для двух слотов документов (Заявка и Накладная).
-
-    В пустом состоянии (Empty State) занимает все свободное пространство окна,
-    предоставляя просторные зоны Drag-and-Drop.
-    При заполнении обоих файлов автоматически сворачивается в компактную сплит-панель (36px).
-    """
+    """Контейнер для слотов заявки и накладной."""
 
     files_ready = Signal(str, str)
     files_changed = Signal()

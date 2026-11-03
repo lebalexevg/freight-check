@@ -1,4 +1,4 @@
-"""Модальное окно «О программе» (AboutDialog)."""
+"""Окно сведений о программе."""
 
 from PySide6.QtCore import QSize, Qt
 from PySide6.QtGui import QFont
@@ -20,7 +20,7 @@ APP_SUBTITLE: str = "Кросс-валидация транспортных до
 
 
 class AboutDialog(QDialog):
-    """Информационное окно сведений о приложении, версии и поддерживаемых форматах."""
+    """Окно сведений о программе и поддерживаемых форматах."""
 
     def __init__(self, parent: QWidget | None = None) -> None:
         super().__init__(parent)
@@ -36,7 +36,7 @@ class AboutDialog(QDialog):
         layout.setContentsMargins(28, 24, 28, 20)
         layout.setSpacing(14)
 
-        # 1. Шапка: официальная иконка приложения, название, версия и подзаголовок
+        # Шапка диалога
         header_layout = QHBoxLayout()
         header_layout.setSpacing(16)
         header_layout.setAlignment(Qt.AlignmentFlag.AlignTop)
@@ -75,13 +75,13 @@ class AboutDialog(QDialog):
         header_layout.addLayout(title_col, stretch=1)
         layout.addLayout(header_layout)
 
-        # Тонкий 1px разделитель
+        # Разделитель
         sep1 = QFrame(self)
         sep1.setObjectName("aboutSep")
         sep1.setFixedHeight(1)
         layout.addWidget(sep1)
 
-        # 2. Описание назначения утилиты
+        # Описание программы
         desc_label = QLabel(
             "Автономная локальная утилита для сверки входящих заявок заказчика "
             "с черновиками электронных транспортных накладных (ЭТрН) до выпуска машины в рейс.",
@@ -91,7 +91,7 @@ class AboutDialog(QDialog):
         desc_label.setObjectName("aboutDescLabel")
         layout.addWidget(desc_label)
 
-        # 3. Поддерживаемые форматы документов (двухколоночный текстовый список без pills)
+        # Поддерживаемые форматы
         formats_col = QVBoxLayout()
         formats_col.setSpacing(6)
 
@@ -131,7 +131,7 @@ class AboutDialog(QDialog):
 
         layout.addLayout(formats_col)
 
-        # 4. Технические сведения (без указания разработчиков)
+        # Технические сведения
         tech_col = QVBoxLayout()
         tech_col.setSpacing(4)
 
@@ -147,13 +147,13 @@ class AboutDialog(QDialog):
         # Распорка
         layout.addStretch(1)
 
-        # Тонкий 1px разделитель перед кнопкой
+        # Разделитель перед кнопкой
         sep2 = QFrame(self)
         sep2.setObjectName("aboutSep")
         sep2.setFixedHeight(1)
         layout.addWidget(sep2)
 
-        # 5. Стандартная кнопка закрытия
+        # Кнопка закрытия
         btn_row = QHBoxLayout()
         btn_row.addStretch(1)
 

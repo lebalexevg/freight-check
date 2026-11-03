@@ -1,10 +1,4 @@
-"""Виджет командной строки сводки и управления проверкой (SummaryBarWidget).
-
-Высота 36px. Плоская системная панель прямо над таблицей:
-Слева: прямой текстовый индикатор статуса («✓ Рейс согласован» / «✕ Найдены расхождения»)
-По центру: числовые счетчики строк через тонкие разделители
-Справа: чекбокс «Только расхождения», меню «Демо-сценарии» и кнопка «Очистить всё»
-"""
+"""Панель сводки результатов и управления проверкой."""
 
 import contextlib
 from collections.abc import Iterable
@@ -34,7 +28,7 @@ from freight_check.ui.icons import (
     create_segoe_icon,
 )
 
-# Прямые статусы рейса с векторными иконками Segoe Fluent
+# Конфигурация отображения статусов
 STATUS_CONFIG: dict[ValidationStatus, tuple[str, str, str]] = {
     ValidationStatus.MATCH: ("Рейс согласован", "#059669", GLYPH_CHECK),
     ValidationStatus.CRITICAL: ("Найдены расхождения", "#DC2626", GLYPH_ERROR),
@@ -44,7 +38,7 @@ STATUS_CONFIG: dict[ValidationStatus, tuple[str, str, str]] = {
 
 
 class SummaryBarWidget(QFrame):
-    """Плоская командная строка сводки результатов и управления (36px)."""
+    """Панель сводки результатов и управления проверкой."""
 
     scenario_selected = Signal(str)
     reset_requested = Signal()
@@ -63,7 +57,7 @@ class SummaryBarWidget(QFrame):
         layout.setAlignment(Qt.AlignmentFlag.AlignVCenter)
         layout.setSpacing(10)
 
-        # 1. Индикатор статуса: векторная иконка Segoe Fluent + чистый текст
+        # Индикатор статуса
         self._status_icon = QLabel(self)
         self._status_icon.setObjectName("summaryStatusIcon")
         self._status_icon.setFixedSize(22, 22)
@@ -76,14 +70,14 @@ class SummaryBarWidget(QFrame):
         self._status_badge.setProperty("status", "idle")
         layout.addWidget(self._status_badge)
 
-        # Тонкий вертикальный разделитель |
+        # Разделитель
         sep1 = QFrame(self)
         sep1.setObjectName("summarySep")
         sep1.setFixedWidth(1)
         sep1.setFixedHeight(18)
         layout.addWidget(sep1)
 
-        # 2. Строгие текстовые метрики через разделитель
+        # Счетчики результатов
         self._critical_label = QLabel("Критических: 0", self)
         self._critical_label.setObjectName("critCountLabel")
         self._critical_label.setProperty("hasValue", "false")
@@ -101,7 +95,7 @@ class SummaryBarWidget(QFrame):
 
         layout.addStretch(1)
 
-        # 3. Правая группа контролов: Чекбокс | Меню демо | Очистить всё
+        # Кнопки управления
         self._only_diffs_cb = QCheckBox("Только расхождения", self)
         self._only_diffs_cb.setObjectName("onlyDiffsCheckBox")
         self._only_diffs_cb.setCursor(Qt.CursorShape.PointingHandCursor)
@@ -221,7 +215,7 @@ class SummaryBarWidget(QFrame):
         self._warning_label.setText(f"Предупреждений: {warning_count}")
         self._match_label.setText(f"Совпадений: {match_count}")
 
-        # Подсвечиваем цветным текстом через динамические QSS свойства
+        # Обновление динамических свойств
         self._critical_label.setProperty("hasValue", "true" if critical_count > 0 else "false")
         self._critical_label.style().unpolish(self._critical_label)
         self._critical_label.style().polish(self._critical_label)

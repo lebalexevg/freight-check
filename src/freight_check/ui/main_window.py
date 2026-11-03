@@ -1,15 +1,4 @@
-"""Главное окно приложения «Рейс-Проверка» (PySide6) в концепции «Инженерный минимализм».
-
-Организовано в плоскую компоновку системного уровня:
-1. Заголовок окна ОС: «Рейс-Проверка — Кросс-валидация документов».
-2. Адаптивная сплит-панель документов (Empty State vs Loaded State 36px):
-   префиксы «Заявка:» / «ЭТрН:», плоские компактные кнопки управления.
-3. Командная строка сводки (36px): текстовый индикатор согласованности,
-   числовые метрики через «|», чекбокс «Только расхождения», меню «Демо-сценарии» и «Очистить всё».
-4. Таблица сопоставления QTableView: динамическое растягивание колонок документов (50/50),
-   посимвольная diff-подсветка, double-click copy, elided-текст и тултипы.
-5. Системный статус-бар: уведомления копирования, тонкий прогресс-бар и метрики производительности.
-"""
+"""Главное окно приложения «Рейс-Проверка»."""
 
 from pathlib import Path
 
@@ -81,7 +70,7 @@ class MainWindow(QMainWindow):
         root_layout.setContentsMargins(16, 16, 16, 14)
         root_layout.setSpacing(12)
 
-        # 1. Плоская командная строка сводки и управления (48px, всегда видна вверху)
+        # Панель сводки
         self._summary_bar = SummaryBarWidget(self)
         self._summary_bar.setup_scenarios(self._scenarios, self._on_scenario_selected)
         self._summary_bar.reset_requested.connect(self._reset_all)
@@ -89,23 +78,23 @@ class MainWindow(QMainWindow):
         self._summary_bar.about_requested.connect(self._show_about_dialog)
         root_layout.addWidget(self._summary_bar)
 
-        # 2. Адаптивная сплит-панель документов (Empty State во весь экран vs Loaded State 48px)
+        # Слоты документов
         self._doc_slots = DocumentSlotsWidget(self)
         self._doc_slots.files_ready.connect(self._on_files_ready)
         self._doc_slots.files_changed.connect(self._on_files_changed)
         root_layout.addWidget(self._doc_slots, stretch=1)
 
-        # 3. Таблица сопоставления расхождений (~80% высоты окна при загрузке)
+        # Таблица сопоставления
         self._diff_table = DiffTableWidget(self)
         self._diff_table.value_copied.connect(self._on_value_copied)
         self._diff_table.setVisible(False)
         root_layout.addWidget(self._diff_table, stretch=0)
 
-        # 4. Системный статус-бар
+        # Статус-бар
         self._setup_status_bar()
 
     def _create_status_sep(self) -> QFrame:
-        """Создает тонкий 1px разделитель статус-бара без утолщения шрифта."""
+        """Создает разделитель статус-бара."""
         status_bar = self.statusBar()
         sep = QFrame(status_bar if status_bar is not None else self)
         sep.setObjectName("statusSep")
@@ -113,7 +102,7 @@ class MainWindow(QMainWindow):
         return sep
 
     def _setup_status_bar(self) -> None:
-        """Настраивает системный статус-бар с центрированным прогресс-баром и едиными 1px разделителями."""
+        """Настраивает статус-бар."""
         status_bar = self.statusBar()
         if status_bar is None:
             return
@@ -122,7 +111,7 @@ class MainWindow(QMainWindow):
         status_bar.setFixedHeight(30)
         status_bar.setContentsMargins(16, 0, 16, 0)
 
-        # 1. Левый информационный текст с чистым позиционированием
+        # Информационный текст
         self._status_text = QLabel(
             "Прикрепите документы или выберите демо-сценарий (Ctrl+D)", status_bar
         )
@@ -130,7 +119,7 @@ class MainWindow(QMainWindow):
         self._status_text.setContentsMargins(0, 0, 0, 0)
         status_bar.addWidget(self._status_text, stretch=1)
 
-        # 2. Индикатор загрузки строго по центру статус-бара (удлинен до 280px, высота 6px)
+        # Индикатор прогресса
         self._progress_bar = QProgressBar(status_bar)
         self._progress_bar.setFixedHeight(6)
         self._progress_bar.setFixedWidth(280)
@@ -141,7 +130,7 @@ class MainWindow(QMainWindow):
         # Отслеживание геометрии статус-бара для абсолютного центрирования прогресс-бара
         status_bar.installEventFilter(self)
 
-        # 3. Правый блок метрик с симметричными 1px разделителями
+        # Блок метрик
         self._metrics_checked_label = QLabel("Проверено: 0", status_bar)
         self._metrics_checked_label.setObjectName("metricsCheckedLabel")
         self._metrics_checked_label.setContentsMargins(0, 0, 0, 0)
@@ -158,7 +147,7 @@ class MainWindow(QMainWindow):
         sep2 = self._create_status_sep()
         status_bar.addPermanentWidget(sep2)
 
-        # Кликабельная кнопка версии для вызова окна «О программе»
+        # Кнопка версии
         self._version_btn = QPushButton(f"v{APP_VERSION}", status_bar)
         self._version_btn.setObjectName("statusVersionBtn")
         self._version_btn.setCursor(Qt.CursorShape.PointingHandCursor)
@@ -278,7 +267,7 @@ class MainWindow(QMainWindow):
         self._current_report = report
         self._progress_bar.setVisible(False)
 
-        # Обновление 36px инфо-полосы сводки
+        # Обновление сводки
         self._summary_bar.set_report(report)
 
         # Обновление таблицы MVC
@@ -377,7 +366,7 @@ class MainWindow(QMainWindow):
     def _metrics_label(self) -> QLabel:
         return self._metrics_checked_label
 
-    # Свойства обратной совместимости для тестов (делегируют в публичный API компонентов)
+    # Свойства обратной совместимости для тестов
     @property
     def _demo_menu_btn(self) -> QToolButton:
         return self._summary_bar.demo_button

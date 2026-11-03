@@ -36,7 +36,7 @@ from freight_check.ui.models import (
     STATUS_ROLE,
 )
 
-# Цветовые константы статусов в дизайн-системе Slate/Zinc
+# Цвета статусов
 COLOR_CRITICAL_MARKER = QColor("#EF4444")
 COLOR_CRITICAL_TEXT = QColor("#B91C1C")
 COLOR_CRITICAL_BG = QColor("#FEE2E2")
@@ -55,7 +55,7 @@ COLOR_MATCH_TEXT = QColor("#64748B")
 COLOR_TEXT_PRIMARY = QColor("#0F172A")
 COLOR_SELECTION_BG = QColor("#E0E7FF")
 
-# Векторные иконки Segoe Fluent Icons для каждого статуса
+# Иконки статусов
 STATUS_GLYPHS: dict[ValidationStatus, str] = {
     ValidationStatus.CRITICAL: GLYPH_ERROR,
     ValidationStatus.WARNING: GLYPH_WARNING,
@@ -67,7 +67,7 @@ _STATUS_ICONS_CACHE: dict[ValidationStatus, QIcon] = {}
 
 
 def get_status_icon(status: ValidationStatus) -> QIcon:
-    """Возвращает мульти-DPI векторный QIcon статуса с нормализованным оптическим размером и центрированием."""
+    """Возвращает иконку статуса."""
     if not _STATUS_ICONS_CACHE:
         _STATUS_ICONS_CACHE[ValidationStatus.CRITICAL] = create_segoe_icon(
             GLYPH_ERROR, COLOR_CRITICAL_MARKER, base_size=16, glyph_scale=0.78
@@ -93,14 +93,14 @@ def get_monospace_font(base_font: QFont) -> QFont:
 
 
 class ParameterColumnDelegate(QStyledItemDelegate):
-    """Делегат первой колонки («Параметр рейса»): левый 4px маркер и иконка статуса Segoe."""
+    """Делегат колонки названия параметра."""
 
     def sizeHint(
         self,
         option: QStyleOptionViewItem,
         index: QModelIndex | QPersistentModelIndex,
     ) -> QSize:
-        """Определяет компактную высоту строки 34px."""
+        """Определяет рекомендуемый размер ячейки."""
         size = super().sizeHint(option, index)
         return QSize(size.width(), max(size.height(), 38))
 
@@ -110,7 +110,7 @@ class ParameterColumnDelegate(QStyledItemDelegate):
         option: QStyleOptionViewItem,
         index: QModelIndex | QPersistentModelIndex,
     ) -> None:
-        """Отрисовывает статус-маркер, векторную иконку Segoe и название параметра."""
+        """Отрисовывает статус-маркер, иконку и название параметра."""
         painter.save()
         painter.setRenderHint(QPainter.RenderHint.Antialiasing, True)
         painter.setRenderHint(QPainter.RenderHint.TextAntialiasing, True)
@@ -120,7 +120,7 @@ class ParameterColumnDelegate(QStyledItemDelegate):
 
         rect = option.rect
 
-        # 1. Фоновая заливка ячейки (с учетом селекшена)
+        # Фон ячейки
         if option.state & QStyle.StateFlag.State_Selected:
             painter.fillRect(rect, COLOR_SELECTION_BG)
         else:
@@ -128,7 +128,7 @@ class ParameterColumnDelegate(QStyledItemDelegate):
             if isinstance(bg_color, QColor):
                 painter.fillRect(rect, bg_color)
 
-        # 2. Левый цветной акцентный маркер (4px) ТОЛЬКО для строк с расхождениями
+        # Акцентный маркер для расхождений
         if status in (
             ValidationStatus.CRITICAL,
             ValidationStatus.WARNING,
@@ -144,7 +144,7 @@ class ParameterColumnDelegate(QStyledItemDelegate):
             marker_rect = QRect(rect.left(), rect.top(), 4, rect.height())
             painter.fillRect(marker_rect, marker_color)
 
-        # 3. Настройка шрифта текста названия параметра и вычисление метрик
+        # Настройка шрифта
         text_font = QFont(option.font)
         text_font.setFamilies(["Segoe UI Variable Text", "Segoe UI", "Inter", "sans-serif"])
         if status in (ValidationStatus.CRITICAL, ValidationStatus.WARNING):
@@ -160,8 +160,7 @@ class ParameterColumnDelegate(QStyledItemDelegate):
         painter.setFont(text_font)
         fm = QFontMetrics(text_font)
 
-        # 4. Векторная иконка статуса с точным оптическим выравниванием по центру заглавных букв
-        # При вертикальном центрировании текста Qt размещает baseline по формуле:
+        # Отрисовка иконки статуса
         baseline_y = rect.top() + (rect.height() - fm.height()) // 2 + fm.ascent()
         cap_center_y = baseline_y - (fm.capHeight() / 2.0)
 
@@ -172,7 +171,7 @@ class ParameterColumnDelegate(QStyledItemDelegate):
         icon = get_status_icon(status)
         icon.paint(painter, icon_rect)
 
-        # 5. Текст названия параметра с защитой от переполнения (ElideRight)
+        # Отрисовка текста параметра
         text_rect = QRect(
             rect.left() + 44,
             rect.top(),
@@ -190,14 +189,14 @@ class ParameterColumnDelegate(QStyledItemDelegate):
 
 
 class DiffHighlightDelegate(QStyledItemDelegate):
-    """Делегат для колонок «Заявка» и «Черновик ЭТрН» с посимвольной diff-подсветкой."""
+    """Делегат колонок сравниваемых документов."""
 
     def sizeHint(
         self,
         option: QStyleOptionViewItem,
         index: QModelIndex | QPersistentModelIndex,
     ) -> QSize:
-        """Определяет компактную высоту ячейки."""
+        """Определяет рекомендуемый размер ячейки."""
         size = super().sizeHint(option, index)
         return QSize(size.width(), max(size.height(), 38))
 
@@ -207,14 +206,14 @@ class DiffHighlightDelegate(QStyledItemDelegate):
         option: QStyleOptionViewItem,
         index: QModelIndex | QPersistentModelIndex,
     ) -> None:
-        """Отрисовывает значения с акцентным diff-выделением отличающихся токенов."""
+        """Отрисовывает значения с выделением расхождений."""
         painter.save()
         painter.setRenderHint(QPainter.RenderHint.Antialiasing, True)
         painter.setRenderHint(QPainter.RenderHint.TextAntialiasing, True)
 
         rect = option.rect
 
-        # 1. Фон ячейки
+        # Фон ячейки
         if option.state & QStyle.StateFlag.State_Selected:
             painter.fillRect(rect, COLOR_SELECTION_BG)
         else:
@@ -227,7 +226,7 @@ class DiffHighlightDelegate(QStyledItemDelegate):
         diff_spans: list[tuple[str, bool]] = index.data(DIFF_HIGHLIGHTS_ROLE) or []
         full_text = str(index.data(Qt.ItemDataRole.DisplayRole) or "")
 
-        # 2. Выбор базового шрифта
+        # Выбор базового шрифта
         base_font = QFont(option.font)
         if is_mono:
             base_font = get_monospace_font(base_font)
@@ -262,7 +261,7 @@ class DiffHighlightDelegate(QStyledItemDelegate):
             painter.restore()
             return
 
-        # 3. Посимвольный / токенный diff-рендеринг для CRITICAL / WARNING
+        # Отрисовка расхождений
         diff_bg = COLOR_CRITICAL_BG if status == ValidationStatus.CRITICAL else COLOR_WARNING_BG
         diff_text_color = (
             COLOR_CRITICAL_TEXT if status == ValidationStatus.CRITICAL else COLOR_WARNING_TEXT
@@ -322,14 +321,14 @@ class DiffHighlightDelegate(QStyledItemDelegate):
 
 
 class ExplanationColumnDelegate(QStyledItemDelegate):
-    """Делегат последней колонки («Пояснение / Разница»): Visual Silencing для совпадений."""
+    """Делегат колонки пояснений."""
 
     def sizeHint(
         self,
         option: QStyleOptionViewItem,
         index: QModelIndex | QPersistentModelIndex,
     ) -> QSize:
-        """Определяет компактную высоту ячейки."""
+        """Определяет рекомендуемый размер ячейки."""
         size = super().sizeHint(option, index)
         return QSize(size.width(), max(size.height(), 38))
 
@@ -339,7 +338,7 @@ class ExplanationColumnDelegate(QStyledItemDelegate):
         option: QStyleOptionViewItem,
         index: QModelIndex | QPersistentModelIndex,
     ) -> None:
-        """Отрисовывает пояснение: для MATCH лаконичный приглушенный прочерк '—'."""
+        """Отрисовывает текст пояснения."""
         painter.save()
         painter.setRenderHint(QPainter.RenderHint.Antialiasing, True)
         painter.setRenderHint(QPainter.RenderHint.TextAntialiasing, True)

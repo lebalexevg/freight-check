@@ -1,7 +1,5 @@
 /* ===================================================================
-   Стили утилиты «Рейс-Проверка» (freight-check)
-   Концепция: Инженерный минимализм (Linear, Sublime Merge, 1Password)
-   Палитра: High-Contrast Slate (#F1F5F9 / #FFFFFF / #CBD5E1 / #94A3B8)
+   Стили приложения «Рейс-Проверка» (freight-check)
    =================================================================== */
 
 /* Базовые параметры окна и шрифтов */
@@ -101,7 +99,7 @@ QMenu::item:selected {
     color: #1D4ED8;
 }
 
-/* 2. Адаптивная зона документов */
+/* Зона документов */
 QFrame#dropZone {
     background-color: #FFFFFF;
     border: none;
@@ -134,7 +132,7 @@ QFrame#dropZone[compact="false"][hasFile="true"]:hover {
     background-color: #FFFFFF;
 }
 
-/* Кнопка выбора файла в полноэкранной карточке */
+/* Кнопка выбора файла */
 QPushButton#dropZoneBrowseBtn {
     background-color: #FFFFFF;
     color: #0F172A;
@@ -156,7 +154,7 @@ QPushButton#dropZoneBrowseBtn:pressed {
     background-color: #DBEAFE;
 }
 
-/* Кнопки управления файлом в полноэкранном слоте (друг под другом) */
+/* Кнопки управления файлом */
 QPushButton#expandedActionBtn {
     background-color: #FFFFFF;
     color: #334155;
@@ -178,7 +176,7 @@ QPushButton#expandedActionBtn:pressed {
     background-color: #F1F5F9;
 }
 
-/* Кнопки внутри компактного слота документов (строгие, плоские) */
+/* Кнопки компактного слота документов */
 QPushButton#compactActionBtn {
     background-color: #FFFFFF;
     color: #334155;
@@ -210,14 +208,14 @@ QPushButton#compactClearBtn:hover {
     border-color: #EF4444;
 }
 
-/* 3. Инфо-полоса сводки */
+/* Панель сводки */
 QFrame#summaryBar {
     background-color: #FFFFFF;
     border: 1px solid #CBD5E1;
     border-radius: 2px;
 }
 
-/* Чекбокс фильтрации расхождений с четкой иконкой */
+/* Чекбокс фильтрации */
 QCheckBox {
     font-size: 13px;
     font-weight: 500;
@@ -264,7 +262,7 @@ QPushButton:pressed {
     background-color: #E2E8F0;
 }
 
-/* 4. Таблица результатов QTableView */
+/* Таблица результатов */
 QTableView {
     background-color: #FFFFFF;
     color: #0F172A;
@@ -314,7 +312,7 @@ QHeaderView::up-arrow, QHeaderView::down-arrow {
     height: 0px;
 }
 
-/* 5. Полоса прокрутки (минималистичный QScrollBar) */
+/* Полоса прокрутки */
 QScrollBar:vertical {
     background-color: transparent;
     width: 6px;
@@ -355,7 +353,7 @@ QScrollBar::add-line:horizontal, QScrollBar::sub-line:horizontal {
     width: 0px;
 }
 
-/* 6. Системный статус-бар с симметричными отступами */
+/* Статус-бар */
 QStatusBar {
     background-color: #F1F5F9;
     border-top: 1px solid #CBD5E1;
@@ -381,7 +379,7 @@ QLabel#metricsTimeLabel {
     padding: 0px 4px;
 }
 
-/* Тонкий 1px разделитель статус-бара */
+/* Разделитель статус-бара */
 QFrame#statusSep {
     background-color: #CBD5E1;
     border: none;
@@ -393,7 +391,7 @@ QFrame#statusSep {
     height: 14px;
 }
 
-/* Заметный удлиненный прогресс-бар по центру */
+/* Прогресс-бар */
 QProgressBar {
     background-color: #E2E8F0;
     border: 1px solid #CBD5E1;
@@ -427,7 +425,7 @@ QPushButton#statusVersionBtn:pressed {
     background-color: #CBD5E1;
 }
 
-/* Кнопка закрытия модального окна «О программе» (стандартный системный стиль) */
+/* Кнопка закрытия окна «О программе» */
 QPushButton#aboutCloseBtn {
     background-color: #FFFFFF;
     color: #334155;
@@ -447,9 +445,7 @@ QPushButton#aboutCloseBtn:pressed {
     background-color: #E2E8F0;
 }
 
-/* ===================================================================
-   Централизованные правила оформления компонентов (Рефакторинг Фазы 2)
-   =================================================================== */
+/* Стили компонентов интерфейса */
 
 /* Элементы модального окна «О программе» */
 QLabel#aboutTitleLabel {
@@ -499,7 +495,7 @@ QLabel#aboutTechLabel {
     font-size: 12px;
 }
 
-/* Элементы инфо-полосы сводки (SummaryBar) */
+/* Элементы панели сводки */
 QLabel#summaryStatusIcon {
     border: none;
     background: transparent;
@@ -570,7 +566,7 @@ QLabel#matchCountLabel[hasValue="true"] {
     font-weight: 600;
 }
 
-/* Элементы карточек документов (DropZone) */
+/* Элементы карточек документов */
 QLabel#docIconLabel,
 QLabel#readyIconLabel {
     border: none;
@@ -646,7 +642,7 @@ QLabel#compactNameLabel {
     background: transparent;
 }
 
-/* Элементы заглушки пустого состояния таблицы (DiffTable) */
+/* Элементы пустого состояния таблицы */
 QLabel#emptyDiffTitle {
     font-size: 18px;
     font-weight: 600;
@@ -658,7 +654,7 @@ QLabel#emptyDiffDesc {
     color: #64748B;
 }
 
-/* Левый информационный текст статус-бара */
+/* Текст статус-бара */
 QLabel#statusText {
     color: #64748B;
     font-size: 12px;

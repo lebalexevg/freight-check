@@ -1,8 +1,4 @@
-"""Утилиты векторных иконок Segoe Fluent Icons для интерфейса «Рейс-Проверка».
-
-Обеспечивают генерацию мульти-DPI векторных QIcon (1x, 2x, 3x) для кристально
-четкого отображения без артефактов масштабирования на экранах 100%, 125%, 150%, 200%.
-"""
+"""Генерация иконки приложения и шрифтовых иконок интерфейса."""
 
 from pathlib import Path
 
@@ -22,7 +18,7 @@ from freight_check.ui.resources import get_resource_path
 SEGOE_FONT_FAMILY: str = "Segoe Fluent Icons"
 SEGOE_FALLBACK_FAMILY: str = "Segoe MDL2 Assets"
 
-# Символы Segoe Fluent / MDL2 Icons
+# Глифы иконок интерфейса
 GLYPH_REFRESH: str = "\ue72c"  # Замена / Синхронизация
 GLYPH_CLOSE: str = "\ue711"  # Удаление / Крестик
 GLYPH_CHECK: str = "\ue73e"  # Галочка совпадения
@@ -53,7 +49,7 @@ def create_segoe_icon(
     weight: QFont.Weight | None = None,
     glyph_scale: float = 0.88,
 ) -> QIcon:
-    """Генерирует мульти-DPI векторный QIcon (1x, 2x, 3x) с точным геометрическим центрированием чернил."""
+    """Генерирует мульти-масштабный QIcon из шрифтового глифа."""
     resolved_color = color or DEFAULT_ICON_COLOR
     resolved_weight = (
         weight
@@ -111,7 +107,7 @@ def get_app_icon_path() -> Path:
 
 
 def get_app_icon() -> QIcon:
-    """Возвращает многомасштабный QIcon приложения для окон и панели задач Windows."""
+    """Возвращает иконку приложения."""
     global _APP_ICON_CACHE
     if _APP_ICON_CACHE is None or _APP_ICON_CACHE.isNull():
         path = get_app_icon_path()

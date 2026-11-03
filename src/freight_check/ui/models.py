@@ -1,8 +1,4 @@
-"""Модели данных таблицы валидации в архитектуре Qt MVC (Model-View-Controller).
-
-Обеспечивают строгую типизацию, приглушение совпадений (Visual Silencing),
-посимвольное вычисление diff-токенов и приоритетную сортировку по критичности.
-"""
+"""Модели данных таблицы валидации в архитектуре Qt MVC."""
 
 import difflib
 from collections.abc import Sequence
@@ -19,14 +15,14 @@ from PySide6.QtGui import QColor
 
 from freight_check.contracts import ValidationRow, ValidationStatus
 
-# Пользовательские роли Qt для кастомных делегатов и сортировки
+# Пользовательские роли данных
 STATUS_ROLE: int = int(Qt.ItemDataRole.UserRole) + 1
 RAW_VALUE_ROLE: int = int(Qt.ItemDataRole.UserRole) + 2
 IS_MONOSPACE_ROLE: int = int(Qt.ItemDataRole.UserRole) + 3
 DIFF_HIGHLIGHTS_ROLE: int = int(Qt.ItemDataRole.UserRole) + 4
 ROW_INDEX_ROLE: int = int(Qt.ItemDataRole.UserRole) + 5
 
-# Заголовки 4 колонок рабочей таблицы (вместо прежних 5)
+# Заголовки колонок таблицы
 COLUMN_HEADERS: tuple[str, ...] = (
     "Параметр рейса",
     "Заявка (Эталон)",
@@ -34,7 +30,7 @@ COLUMN_HEADERS: tuple[str, ...] = (
     "Пояснение / Разница",
 )
 
-# Перечень параметров, требующих моноширинного шрифта для мгновенного контроля разрядов
+# Параметры с моноширинным шрифтом
 MONOSPACE_PARAMETERS: frozenset[str] = frozenset(
     {
         "Госномер тягача",
@@ -75,7 +71,7 @@ STATUS_PRIORITY: dict[ValidationStatus, int] = {
     ValidationStatus.MATCH: 3,
 }
 
-# Приглушенные фоновые оттенки строк для мгновенного считывания диспетчером
+# Фоновые цвета строк
 STATUS_ROW_BACKGROUNDS: dict[ValidationStatus, QColor] = {
     ValidationStatus.CRITICAL: QColor("#FEF2F2"),
     ValidationStatus.WARNING: QColor("#FFFBEB"),
@@ -206,7 +202,7 @@ class ValidationTableModel(QAbstractTableModel):
             if col_idx == 2:
                 return row.waybill_value
             if col_idx == 3:
-                # Visual Silencing: для совпадений заменяем шаблонные фразы на лаконичный прочерк
+                # Для совпадений отображаем прочерк
                 if row.status == ValidationStatus.MATCH:
                     return "—"
                 return row.explanation

@@ -12,11 +12,7 @@ from freight_check.ui.mock_data import (
 
 
 class ValidationWorker(QThread):
-    """Фоновый поток (QThread) выполнения конвейера валидации документов.
-
-    Предотвращает блокировку главного графического потока GUI в соответствии
-    с архитектурными инвариантами AGENTS.md (раздел 2).
-    """
+    """Фоновый поток выполнения валидации документов."""
 
     progress_changed = Signal(int, str)
     validation_finished = Signal(SessionReport)
@@ -37,31 +33,31 @@ class ValidationWorker(QThread):
     def run(self) -> None:
         """Основной цикл фонового потока."""
         try:
-            # 1. Этап: Загрузка и маршрутизация файлов
+            # Загрузка и маршрутизация файлов
             self.progress_changed.emit(15, "Анализ форматов и чтение документов...")
             time.sleep(0.08)
             if self.isInterruptionRequested():
                 return
 
-            # 2. Этап: Извлечение реквизитов (Digital / OCR)
+            # Извлечение реквизитов
             self.progress_changed.emit(40, "Семантическое извлечение ключевых реквизитов...")
             time.sleep(0.12)
             if self.isInterruptionRequested():
                 return
 
-            # 3. Этап: Нормализация данных
+            # Нормализация данных
             self.progress_changed.emit(65, "Нормализация госномеров, массы и адресов...")
             time.sleep(0.10)
             if self.isInterruptionRequested():
                 return
 
-            # 4. Этап: Движок сопоставления и бизнес-правил
+            # Сопоставление данных
             self.progress_changed.emit(85, "Кросс-валидация и проверка на перегруз...")
             time.sleep(0.10)
             if self.isInterruptionRequested():
                 return
 
-            # 5. Этап: Сборка итогового отчета
+            # Формирование отчета
             self.progress_changed.emit(100, "Формирование итогового отчета сессии...")
             time.sleep(0.05)
             if self.isInterruptionRequested():
