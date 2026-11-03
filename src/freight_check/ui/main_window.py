@@ -13,7 +13,7 @@
 
 from pathlib import Path
 
-from PySide6.QtCore import Qt
+from PySide6.QtCore import Qt, QTimer
 from PySide6.QtGui import QKeySequence, QShortcut
 from PySide6.QtWidgets import (
     QApplication,
@@ -69,6 +69,8 @@ class MainWindow(QMainWindow):
         self._worker: ValidationWorker | None = None
         self._current_report: SessionReport | None = None
         self._selected_scenario_key: str | None = None
+        self._status_restore_timer: QTimer | None = None
+        self._saved_status_text: str | None = None
 
         self._setup_ui()
         self._apply_styles()
@@ -105,8 +107,18 @@ class MainWindow(QMainWindow):
         # 4. Системный статус-бар
         self._setup_status_bar()
 
+    def _create_status_sep(self) -> QFrame:
+        """Создает тонкий 1px разделитель статус-бара без утолщения шрифта."""
+        sep = QFrame(self)
+        sep.setObjectName("statusSep")
+        sep.setFrameShape(QFrame.Shape.NoFrame)
+        sep.setFixedWidth(1)
+        sep.setFixedHeight(14)
+        sep.setStyleSheet("background-color: #CBD5E1; border: none;")
+        return sep
+
     def _setup_status_bar(self) -> None:
-        """Настраивает системный статус-бар со строго симметричными отступами."""
+        """Настраивает системный статус-бар с центрированным прогресс-баром и едиными 1px разделителями."""
         status_bar = self.statusBar()
         if status_bar is None:
             return
@@ -115,33 +127,45 @@ class MainWindow(QMainWindow):
         status_bar.setFixedHeight(30)
         status_bar.setContentsMargins(16, 0, 16, 0)
 
-        # Левый информационный текст с чистым позиционированием
+        # 1. Левый информационный текст с чистым позиционированием
         self._status_text = QLabel("Прикрепите документы или выберите демо-сценарий (Ctrl+D)")
         self._status_text.setStyleSheet("color: #64748B; font-size: 12px;")
         self._status_text.setContentsMargins(0, 0, 0, 0)
         status_bar.addWidget(self._status_text, stretch=1)
 
-        # Встроенный ультратонкий прогресс-бар
+        # 2. Индикатор загрузки по центру статус-бара (удлинен до 280px, высота 6px)
         self._progress_bar = QProgressBar()
-        self._progress_bar.setFixedHeight(4)
-        self._progress_bar.setFixedWidth(140)
+        self._progress_bar.setFixedHeight(6)
+        self._progress_bar.setFixedWidth(280)
         self._progress_bar.setRange(0, 100)
         self._progress_bar.setTextVisible(False)
         self._progress_bar.setVisible(False)
-        status_bar.addPermanentWidget(self._progress_bar)
+        status_bar.addWidget(self._progress_bar, stretch=0)
 
-        # Правый блок метрик с симметричным 14px отступом от границы окна
-        self._metrics_label = QLabel("Проверено: 0  │  Время: 0 мс")
-        self._metrics_label.setStyleSheet("color: #64748B; font-size: 12px; font-weight: 500;")
-        self._metrics_label.setContentsMargins(0, 0, 0, 0)
-        status_bar.addPermanentWidget(self._metrics_label)
+        # Распорка справа от прогресс-бара для центрирования между левым текстом и метриками
+        self._status_middle_spacer = QWidget()
+        status_bar.addWidget(self._status_middle_spacer, stretch=1)
 
-        # Тонкий разделитель перед версией
-        sep = QFrame()
-        sep.setFixedWidth(1)
-        sep.setFixedHeight(14)
-        sep.setStyleSheet("background-color: #CBD5E1;")
-        status_bar.addPermanentWidget(sep)
+        # 3. Правый блок метрик с симметричными 1px разделителями
+        self._metrics_checked_label = QLabel("Проверено: 0")
+        self._metrics_checked_label.setObjectName("metricsCheckedLabel")
+        self._metrics_checked_label.setStyleSheet(
+            "color: #64748B; font-size: 12px; font-weight: 500;"
+        )
+        self._metrics_checked_label.setContentsMargins(0, 0, 0, 0)
+        status_bar.addPermanentWidget(self._metrics_checked_label)
+
+        sep1 = self._create_status_sep()
+        status_bar.addPermanentWidget(sep1)
+
+        self._metrics_time_label = QLabel("Время: 0 мс")
+        self._metrics_time_label.setObjectName("metricsTimeLabel")
+        self._metrics_time_label.setStyleSheet("color: #64748B; font-size: 12px; font-weight: 500;")
+        self._metrics_time_label.setContentsMargins(0, 0, 0, 0)
+        status_bar.addPermanentWidget(self._metrics_time_label)
+
+        sep2 = self._create_status_sep()
+        status_bar.addPermanentWidget(sep2)
 
         # Кликабельная кнопка версии для вызова окна «О программе»
         self._version_btn = QPushButton(f"v{APP_VERSION}")
@@ -265,9 +289,8 @@ class MainWindow(QMainWindow):
         self._diff_table.set_rows(report.rows)
 
         # Обновление статус-бара
-        self._metrics_label.setText(
-            f"Проверено: {len(report.rows)}  │  Время: {report.processing_time_ms} мс"
-        )
+        self._metrics_checked_label.setText(f"Проверено: {len(report.rows)}")
+        self._metrics_time_label.setText(f"Время: {report.processing_time_ms} мс")
         self._status_text.setText("Валидация успешно завершена")
 
     def _on_worker_failed(self, error_message: str) -> None:
@@ -280,11 +303,30 @@ class MainWindow(QMainWindow):
         """Переключение фильтрации 'Только расхождения' в таблице."""
         self._diff_table.set_hide_matches(hide_matches)
 
+    def _show_temporary_status(self, message: str, timeout_ms: int = 3000) -> None:
+        """Отображает временное уведомление в основном лейбле статус-бара с сохранением отступа."""
+        if self._status_restore_timer is not None and self._status_restore_timer.isActive():
+            self._status_restore_timer.stop()
+        elif self._saved_status_text is None:
+            self._saved_status_text = self._status_text.text()
+
+        self._status_text.setText(message)
+
+        timer = QTimer(self)
+        timer.setSingleShot(True)
+        timer.timeout.connect(self._restore_status_text)
+        self._status_restore_timer = timer
+        timer.start(timeout_ms)
+
+    def _restore_status_text(self) -> None:
+        """Восстанавливает исходный текст статус-бара после временного уведомления."""
+        if self._saved_status_text is not None:
+            self._status_text.setText(self._saved_status_text)
+            self._saved_status_text = None
+
     def _on_value_copied(self, text: str) -> None:
-        """Отображает временное уведомление в статус-баре при копировании реквизита."""
-        status_bar = self.statusBar()
-        if status_bar:
-            status_bar.showMessage(f"Скопировано в буфер: «{text}»", 3000)
+        """Отображает временное уведомление в статус-баре при копировании реквизита с сохранением отступа."""
+        self._show_temporary_status(f"Скопировано в буфер: «{text}»", 3000)
 
     def _show_about_dialog(self) -> None:
         """Открывает модальное информационное окно «О программе»."""
@@ -304,8 +346,13 @@ class MainWindow(QMainWindow):
         self._progress_bar.setVisible(False)
         self._current_report = None
         self._selected_scenario_key = None
-        self._metrics_label.setText("Проверено: 0  │  Время: 0 мс")
+        self._metrics_checked_label.setText("Проверено: 0")
+        self._metrics_time_label.setText("Время: 0 мс")
         self._status_text.setText("Прикрепите документы или выберите демо-сценарий (Ctrl+D)")
+
+    @property
+    def _metrics_label(self) -> QLabel:
+        return self._metrics_checked_label
 
     # Свойства обратной совместимости
     @property

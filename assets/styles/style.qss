@@ -362,19 +362,43 @@ QStatusBar {
     color: #475569;
     font-size: 12px;
     min-height: 28px;
-    padding: 0px;
+    padding: 0px 16px;
 }
 
 QStatusBar::item {
     border: none;
 }
 
-/* Тонкий прогресс-бар */
-QProgressBar {
+QStatusBar QLabel {
+    padding: 0px;
+}
+
+QLabel#metricsCheckedLabel,
+QLabel#metricsTimeLabel {
+    color: #64748B;
+    font-size: 12px;
+    font-weight: 500;
+    padding: 0px 4px;
+}
+
+/* Тонкий 1px разделитель статус-бара */
+QFrame#statusSep {
     background-color: #CBD5E1;
     border: none;
-    border-radius: 2px;
-    height: 4px;
+    min-width: 1px;
+    max-width: 1px;
+    width: 1px;
+    min-height: 14px;
+    max-height: 14px;
+    height: 14px;
+}
+
+/* Заметный удлиненный прогресс-бар по центру */
+QProgressBar {
+    background-color: #E2E8F0;
+    border: 1px solid #CBD5E1;
+    border-radius: 3px;
+    height: 6px;
     text-align: center;
 }
 

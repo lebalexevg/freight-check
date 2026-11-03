@@ -1,7 +1,9 @@
 """Тесты для компонентов графического интерфейса и моковых данных."""
 
 import pytest
-from PySide6.QtWidgets import QApplication, QLabel, QPushButton
+from PySide6.QtCore import Qt
+from PySide6.QtTest import QTest
+from PySide6.QtWidgets import QApplication, QFrame, QLabel, QPushButton
 
 from freight_check.contracts import SessionReport, ValidationStatus
 from freight_check.ui.diff_table import DiffTableWidget
@@ -122,6 +124,23 @@ def test_diff_table_widget(qapp: QApplication) -> None:
     assert len(copied_signals) == 1
     assert len(copied_signals[0]) > 0
 
+    # Проверка снятия выделения:
+    # 1. Выделяем строку 0
+    table._table.selectRow(0)
+    selection_model = table._table.selectionModel()
+    assert selection_model is not None and len(selection_model.selectedRows()) == 1
+
+    # 2. Снятие выделения по клавише Escape
+    QTest.keyClick(table._table, Qt.Key.Key_Escape)
+    assert selection_model is not None and len(selection_model.selectedRows()) == 0
+
+    # 3. Выделяем строку снова и снимаем повторным кликом
+    table._table.selectRow(0)
+    assert selection_model is not None and len(selection_model.selectedRows()) == 1
+    cell_rect = table._table.visualRect(table._proxy_model.index(0, 0))
+    QTest.mouseClick(table._table.viewport(), Qt.MouseButton.LeftButton, pos=cell_rect.center())
+    assert selection_model is not None and len(selection_model.selectedRows()) == 0
+
     # Очистка таблицы
     table.clear()
     assert table.row_count() == 0
@@ -182,6 +201,26 @@ def test_main_window_integration(qapp: QApplication) -> None:
     assert not window._summary_bar.isHidden()
     assert not window._diff_table.isHidden()
     assert window._diff_table.row_count() > 0
+
+    # Проверяем прогресс-бар: удлиненный (280px) и высотой 6px
+    assert window._progress_bar.width() == 280
+    assert window._progress_bar.height() == 6
+
+    # Проверяем временное уведомление при копировании с сохранением отступа в статусе
+    window._on_value_copied("г. Самара")
+    assert "г. Самара" in window._status_text.text()
+    assert "Скопировано в буфер" in window._status_text.text()
+
+    # Проверяем разделители статус-бара: оба 1px без утолщения шрифта
+    status_bar = window.statusBar()
+    assert status_bar is not None
+    separators: list[QFrame] = [
+        w for w in status_bar.children() if isinstance(w, QFrame) and w.objectName() == "statusSep"
+    ]
+    assert len(separators) == 2
+    for sep in separators:
+        assert sep.width() == 1
+        assert sep.height() == 14
 
     # Проверяем сброс всех данных
     window._reset_all()

@@ -31,6 +31,46 @@ from freight_check.ui.models import (
 )
 
 
+class DiffTableView(QTableView):
+    """Таблица результатов со снятием выделения по клику в пустоту, повторному клику и Escape."""
+
+    def mousePressEvent(self, event) -> None:
+        pos = event.position().toPoint() if hasattr(event, "position") else event.pos()
+        index = self.indexAt(pos)
+        if not index.isValid():
+            # Клик по пустому пространству ниже строк таблицы -> сброс выделения
+            self.clearSelection()
+            self.setCurrentIndex(QModelIndex())
+            event.accept()
+            return
+
+        # Если строка уже выделена, повторный клик снимает выделение
+        selection_model = self.selectionModel()
+        if selection_model and selection_model.isRowSelected(index.row(), QModelIndex()):
+            self.clearSelection()
+            self.setCurrentIndex(QModelIndex())
+            event.accept()
+            return
+
+        super().mousePressEvent(event)
+
+    def mouseDoubleClickEvent(self, event) -> None:
+        # При двойном клике гарантируем выбор строки для копирования
+        pos = event.position().toPoint() if hasattr(event, "position") else event.pos()
+        index = self.indexAt(pos)
+        if index.isValid():
+            self.selectRow(index.row())
+        super().mouseDoubleClickEvent(event)
+
+    def keyPressEvent(self, event) -> None:
+        if event.key() == Qt.Key.Key_Escape:
+            self.clearSelection()
+            self.setCurrentIndex(QModelIndex())
+            event.accept()
+            return
+        super().keyPressEvent(event)
+
+
 class DiffTableWidget(QWidget):
     """Таблица сопоставления реквизитов с поддержкой MVC и diff-делегатов."""
 
@@ -75,7 +115,7 @@ class DiffTableWidget(QWidget):
         self._proxy_model = ValidationSortFilterProxyModel(parent=self)
         self._proxy_model.setSourceModel(self._source_model)
 
-        self._table = QTableView(self)
+        self._table = DiffTableView(self)
         self._table.setObjectName("diffTableView")
         self._table.setModel(self._proxy_model)
 
