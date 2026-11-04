@@ -18,7 +18,7 @@
 ## Стек технологий
 
 - **Среда выполнения:** Python 3.13
-- **Управление инструментами и задачами:** [`mise`](https://mise.jdx.dev) (рекомендуется при наличии) / нативный [`uv`](https://github.com/astral-sh/uv)
+- **Управление инструментами и задачами:** [`mise`](https://mise.jdx.dev) (рекомендуется) / [`uv`](https://github.com/astral-sh/uv)
 - **Пользовательский интерфейс:** `PySide6`
 - **Парсеры структурированных данных:** `openpyxl`, `xlrd`, `python-docx`, `pdfplumber`, `xml.etree.ElementTree`
 - **OCR и компьютерное зрение:** `pypdfium2`, `opencv-python-headless`, `Pillow`, `rapidocr-onnxruntime`
@@ -30,9 +30,10 @@
 
 ## Быстрый старт
 
-Проект поддерживает два удобных способа запуска: через `mise` (если он установлен в системе) или нативно через `uv`.
+Проект поддерживает два способа настройки окружения и запуска: через менеджер инструментов `mise` или нативно через `uv`.
 
-### Способ 1: С использованием `mise` (рекомендуется)
+<details>
+<summary><b>Способ 1: С использованием mise (рекомендуется)</b></summary>
 
 ```bash
 # 1. Клонирование репозитория
@@ -50,7 +51,10 @@ mise run dev
 mise run check
 ```
 
-### Способ 2: Нативно через `uv`
+</details>
+
+<details>
+<summary><b>Способ 2: Нативно через uv</b></summary>
 
 ```bash
 # 1. Клонирование репозитория
@@ -70,7 +74,10 @@ uv run freight-check
 uv run pytest
 ```
 
-### Сборка переносимой версии и инсталлятора Windows
+</details>
+
+<details>
+<summary><b>Сборка переносимой версии и инсталлятора Windows</b></summary>
 
 ```powershell
 # Автоматическая сборка каталога PyInstaller и инсталлятора Inno Setup
@@ -79,6 +86,8 @@ uv run pytest
 # Сборка только переносимого каталога dist/freight-check/ (без Inno Setup)
 .\build.ps1 -NoInstaller
 ```
+
+</details>
 
 ---
 
