@@ -55,6 +55,12 @@ uv run pre-commit run --all-files
 
 # 8. Запуск утилиты в режиме разработки
 uv run freight-check
+
+# 9. Запуск полного цикла сборки дистрибутива (PyInstaller + Inno Setup)
+uv run python scripts/build.py
+
+# 10. Быстрый запуск сборщика в Windows PowerShell
+.\build.ps1
 ```
 
 ---
