@@ -1,6 +1,9 @@
 """Тесты для компонентов графического интерфейса и моковых данных."""
 
-from PySide6.QtWidgets import QApplication
+import pytest
+from PySide6.QtCore import Qt
+from PySide6.QtTest import QTest
+from PySide6.QtWidgets import QApplication, QFrame, QLabel, QPushButton
 
 from freight_check.contracts import SessionReport, ValidationStatus
 from freight_check.ui.diff_table import DiffTableWidget
@@ -94,35 +97,53 @@ def test_drop_zone_widget(qapp: QApplication) -> None:
 
 
 def test_diff_table_widget(qapp: QApplication) -> None:
-    """Проверка таблицы расхождений и фильтрации."""
+    """Проверка таблицы расхождений, фильтрации расхождений и копирования по двойному клику."""
     table = DiffTableWidget()
 
     # Заполнение строками сценария 3 (опечатки: 3 критических + совпадения)
     s3 = get_mock_scenario_3_typos()
     table.set_rows(s3.rows)
 
-    # Проверка отображения строк таблицы
-    assert table._table.rowCount() == len(s3.rows)
+    # Проверка отображения строк таблицы через модель
+    assert table.row_count() == len(s3.rows)
 
-    # Фильтрация только по критическим ошибкам
-    table._set_status_filter(ValidationStatus.CRITICAL)
-    assert table._table.rowCount() == 3
+    # Фильтрация «Только расхождения»
+    table.set_hide_matches(True)
+    assert table.row_count() == 3
 
-    # Фильтрация по совпадениям
-    table._set_status_filter(ValidationStatus.MATCH)
-    assert table._table.rowCount() == len(s3.rows) - 3
+    # Отключение фильтра
+    table.set_hide_matches(False)
+    assert table.row_count() == len(s3.rows)
 
-    # Сброс фильтра
-    table._set_status_filter(None)
-    assert table._table.rowCount() == len(s3.rows)
+    # Проверка двойного клика для копирования
+    copied_signals: list[str] = []
+    table.value_copied.connect(copied_signals.append)
 
-    # Поиск по подстроке
-    table._on_search_changed("паспорт")
-    assert table._table.rowCount() == 1
+    first_index = table._proxy_model.index(0, 1)
+    table._on_cell_double_clicked(first_index)
+    assert len(copied_signals) == 1
+    assert len(copied_signals[0]) > 0
+
+    # Проверка снятия выделения:
+    # 1. Выделяем строку 0
+    table._table.selectRow(0)
+    selection_model = table._table.selectionModel()
+    assert selection_model is not None and len(selection_model.selectedRows()) == 1
+
+    # 2. Снятие выделения по клавише Escape
+    QTest.keyClick(table._table, Qt.Key.Key_Escape)
+    assert selection_model is not None and len(selection_model.selectedRows()) == 0
+
+    # 3. Выделяем строку снова и снимаем повторным кликом
+    table._table.selectRow(0)
+    assert selection_model is not None and len(selection_model.selectedRows()) == 1
+    cell_rect = table._table.visualRect(table._proxy_model.index(0, 0))
+    QTest.mouseClick(table._table.viewport(), Qt.MouseButton.LeftButton, pos=cell_rect.center())
+    assert selection_model is not None and len(selection_model.selectedRows()) == 0
 
     # Очистка таблицы
     table.clear()
-    assert len(table._current_rows) == 0
+    assert table.row_count() == 0
 
 
 def test_validation_worker_lifecycle(qapp: QApplication) -> None:
@@ -153,15 +174,22 @@ def test_main_window_integration(qapp: QApplication) -> None:
     """Проверка инициализации и интеграции компонентов MainWindow."""
     window = MainWindow()
 
-    assert not window._start_button.isEnabled()
-    assert window._kpi_banner.isHidden()
+    assert not window.windowIcon().isNull()
+    assert window.windowTitle() == "Рейс-Проверка — Кросс-валидация документов"
+    assert not window._summary_bar.isHidden()
+    assert "Ожидание документов" in window._summary_bar._status_badge.text()
+    assert not window._doc_slots.has_both_files()
+    assert window._diff_table.isHidden()
 
-    # Загрузка сценария через демо-кнопку
-    window._on_load_demo_clicked()
+    # Загрузка сценария через выбор демо-сценария
+    first_scenario_key = list(window._scenarios.keys())[0]
+    window._on_scenario_selected(first_scenario_key)
 
-    # Проверяем, что файлы установились
+    # Проверяем, что файлы установились и слоты перешли в компактный вид
+    assert window._doc_slots.has_both_files()
     assert window._order_drop_zone.has_file()
     assert window._waybill_drop_zone.has_file()
+    assert not window._diff_table.isHidden()
 
     # Ждем завершения воркера и обрабатываем события Qt
     if window._worker is not None:
@@ -170,14 +198,114 @@ def test_main_window_integration(qapp: QApplication) -> None:
 
     # Проверяем, что отчет получен и UI обновился
     assert window._current_report is not None
-    assert not window._kpi_banner.isHidden()
-    assert window._diff_table._table.rowCount() > 0
+    assert not window._summary_bar.isHidden()
+    assert not window._diff_table.isHidden()
+    assert window._diff_table.row_count() > 0
+
+    # Проверяем параметры прогресс-бара
+    assert window._progress_bar.width() == 280
+    assert window._progress_bar.height() == 6
+    status_bar = window.statusBar()
+    assert status_bar is not None
+    window._reposition_progress_bar()
+    assert window._progress_bar.x() == (status_bar.width() - 280) // 2
+
+    # Проверяем уведомление при копировании
+    window._on_value_copied("г. Самара")
+    assert "г. Самара" in window._status_text.text()
+    assert "Скопировано в буфер" in window._status_text.text()
+
+    # Проверяем разделители статус-бара
+    status_bar = window.statusBar()
+    assert status_bar is not None
+    separators: list[QFrame] = [
+        w for w in status_bar.children() if isinstance(w, QFrame) and w.objectName() == "statusSep"
+    ]
+    assert len(separators) == 2
+    for sep in separators:
+        assert sep.width() == 1
+        assert sep.height() == 14
 
     # Проверяем сброс всех данных
     window._reset_all()
+    assert not window._doc_slots.has_both_files()
     assert not window._order_drop_zone.has_file()
     assert not window._waybill_drop_zone.has_file()
-    assert window._kpi_banner.isHidden()
-    assert not window._start_button.isEnabled()
+    assert window._diff_table.isHidden()
+    assert not window._summary_bar.isHidden()
+    assert "Ожидание документов" in window._summary_bar._status_badge.text()
 
     window.close()
+
+
+def test_about_dialog(qapp: QApplication) -> None:
+    """Проверка модального диалога «О программе» и элементов интерфейса."""
+    from freight_check.ui.about_dialog import APP_NAME, APP_VERSION, AboutDialog
+
+    dialog = AboutDialog()
+    assert not dialog.windowIcon().isNull()
+    assert APP_NAME in dialog.windowTitle()
+    assert dialog.isModal()
+
+    # Проверяем наличие версии
+    badges = [child for child in dialog.findChildren(QLabel) if f"v{APP_VERSION}" in child.text()]
+    assert len(badges) >= 1
+
+    # Проверяем кнопку закрытия
+    close_btn = dialog.findChild(QPushButton, "aboutCloseBtn")
+    assert close_btn is not None
+    assert close_btn.text() == "Понятно"
+    dialog.accept()
+    dialog.close()
+
+
+def test_main_window_about_triggers(qapp: QApplication, monkeypatch: pytest.MonkeyPatch) -> None:
+    """Проверка точек вызова окна «О программе» (тулбар, статус-бар, F1)."""
+    from freight_check.ui.about_dialog import APP_VERSION
+
+    window = MainWindow()
+
+    # 1. Кнопка справки в SummaryBar
+    assert window._about_btn is not None
+    assert window._about_btn.toolTip() == "О программе и справка (F1)"
+
+    # 2. Кнопка версии в статус-баре
+    assert window._version_btn is not None
+    assert window._version_btn.text() == f"v{APP_VERSION}"
+
+    # 3. Шорткат F1
+    assert window._about_shortcut is not None
+    assert window._about_shortcut.key().toString() == "F1"
+
+    # Мокаем _show_about_dialog, чтобы не открывать блокирующий QDialog.exec()
+    about_called: list[bool] = []
+    monkeypatch.setattr(window, "_show_about_dialog", lambda: about_called.append(True))
+
+    # Клик по кнопке на панели инструментов
+    window._about_btn.click()
+    assert len(about_called) == 1
+
+    # Клик по кнопке версии в статус-баре
+    window._version_btn.click()
+    assert len(about_called) == 2
+
+    # Активация шортката F1
+    window._about_shortcut.activated.emit()
+    assert len(about_called) == 3
+
+    window.close()
+
+
+def test_app_icon(qapp: QApplication) -> None:
+    """Проверка наличия и корректности загрузки векторной/растровой иконки приложения."""
+    from freight_check.ui.icons import get_app_icon, get_app_icon_path
+
+    icon_path = get_app_icon_path()
+    assert icon_path.exists()
+
+    icon = get_app_icon()
+    assert not icon.isNull()
+    pix = icon.pixmap(32, 32)
+    assert not pix.isNull()
+    assert pix.width() == 32
+    assert pix.height() == 32

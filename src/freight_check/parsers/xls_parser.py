@@ -17,9 +17,11 @@ class XLSParser(BaseParser):
 
         try:
             workbook = xlrd.open_workbook(str(file_path), on_demand=True)
-            for sheet in workbook.sheets():
-                pages.append(self._process_sheet(sheet))
-            workbook.release_resources()
+            try:
+                for sheet in workbook.sheets():
+                    pages.append(self._process_sheet(sheet))
+            finally:
+                workbook.release_resources()
         except XLRDError as e:
             raise ValueError("Ошибка парсинга XLS (поврежденный файл)") from e
         except Exception as e:

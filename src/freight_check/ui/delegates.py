@@ -1,0 +1,381 @@
+"""Кастомные делегаты PySide6 для отрисовки статусов, diff-токенов и моноширинных реквизитов."""
+
+from PySide6.QtCore import (
+    QModelIndex,
+    QPersistentModelIndex,
+    QPoint,
+    QRect,
+    QRectF,
+    QSize,
+    Qt,
+)
+from PySide6.QtGui import (
+    QColor,
+    QFont,
+    QFontMetrics,
+    QIcon,
+    QPainter,
+)
+from PySide6.QtWidgets import (
+    QStyle,
+    QStyledItemDelegate,
+    QStyleOptionViewItem,
+)
+
+from freight_check.contracts import ValidationStatus
+from freight_check.ui.icons import (
+    GLYPH_CHECK,
+    GLYPH_ERROR,
+    GLYPH_HELP,
+    GLYPH_WARNING,
+    create_segoe_icon,
+)
+from freight_check.ui.models import (
+    DIFF_HIGHLIGHTS_ROLE,
+    IS_MONOSPACE_ROLE,
+    STATUS_ROLE,
+)
+
+# Цвета статусов
+COLOR_CRITICAL_MARKER = QColor("#EF4444")
+COLOR_CRITICAL_TEXT = QColor("#B91C1C")
+COLOR_CRITICAL_BG = QColor("#FEE2E2")
+
+COLOR_WARNING_MARKER = QColor("#F59E0B")
+COLOR_WARNING_TEXT = QColor("#B45309")
+COLOR_WARNING_BG = QColor("#FEF3C7")
+
+COLOR_UNCERTAIN_MARKER = QColor("#94A3B8")
+COLOR_UNCERTAIN_TEXT = QColor("#475569")
+COLOR_UNCERTAIN_BG = QColor("#F1F5F9")
+
+COLOR_MATCH_MARKER = QColor("#10B981")
+COLOR_MATCH_TEXT = QColor("#64748B")
+
+COLOR_TEXT_PRIMARY = QColor("#0F172A")
+COLOR_SELECTION_BG = QColor("#E0E7FF")
+
+# Иконки статусов
+STATUS_GLYPHS: dict[ValidationStatus, str] = {
+    ValidationStatus.CRITICAL: GLYPH_ERROR,
+    ValidationStatus.WARNING: GLYPH_WARNING,
+    ValidationStatus.UNCERTAIN: GLYPH_HELP,
+    ValidationStatus.MATCH: GLYPH_CHECK,
+}
+
+_STATUS_ICONS_CACHE: dict[ValidationStatus, QIcon] = {}
+
+
+def get_status_icon(status: ValidationStatus) -> QIcon:
+    """Возвращает иконку статуса."""
+    if not _STATUS_ICONS_CACHE:
+        _STATUS_ICONS_CACHE[ValidationStatus.CRITICAL] = create_segoe_icon(
+            GLYPH_ERROR, COLOR_CRITICAL_MARKER, base_size=16, glyph_scale=0.78
+        )
+        _STATUS_ICONS_CACHE[ValidationStatus.WARNING] = create_segoe_icon(
+            GLYPH_WARNING, COLOR_WARNING_MARKER, base_size=16, glyph_scale=0.78
+        )
+        _STATUS_ICONS_CACHE[ValidationStatus.UNCERTAIN] = create_segoe_icon(
+            GLYPH_HELP, COLOR_UNCERTAIN_MARKER, base_size=16, glyph_scale=0.85
+        )
+        _STATUS_ICONS_CACHE[ValidationStatus.MATCH] = create_segoe_icon(
+            GLYPH_CHECK, COLOR_MATCH_MARKER, base_size=16, glyph_scale=1.15
+        )
+    return _STATUS_ICONS_CACHE.get(status, _STATUS_ICONS_CACHE[ValidationStatus.MATCH])
+
+
+def get_monospace_font(base_font: QFont) -> QFont:
+    """Создает моноширинный шрифт для кодифицированных параметров рейса."""
+    font = QFont(base_font)
+    font.setFamilies(["Cascadia Mono", "Consolas", "Courier New", "monospace"])
+    font.setPixelSize(13)
+    return font
+
+
+class ParameterColumnDelegate(QStyledItemDelegate):
+    """Делегат колонки названия параметра."""
+
+    def sizeHint(
+        self,
+        option: QStyleOptionViewItem,
+        index: QModelIndex | QPersistentModelIndex,
+    ) -> QSize:
+        """Определяет рекомендуемый размер ячейки."""
+        size = super().sizeHint(option, index)
+        return QSize(size.width(), max(size.height(), 38))
+
+    def paint(
+        self,
+        painter: QPainter,
+        option: QStyleOptionViewItem,
+        index: QModelIndex | QPersistentModelIndex,
+    ) -> None:
+        """Отрисовывает статус-маркер, иконку и название параметра."""
+        painter.save()
+        painter.setRenderHint(QPainter.RenderHint.Antialiasing, True)
+        painter.setRenderHint(QPainter.RenderHint.TextAntialiasing, True)
+
+        status = index.data(STATUS_ROLE) or ValidationStatus.MATCH
+        text = str(index.data(Qt.ItemDataRole.DisplayRole) or "")
+
+        rect = option.rect
+
+        # Фон ячейки
+        if option.state & QStyle.StateFlag.State_Selected:
+            painter.fillRect(rect, COLOR_SELECTION_BG)
+        else:
+            bg_color = index.data(Qt.ItemDataRole.BackgroundRole)
+            if isinstance(bg_color, QColor):
+                painter.fillRect(rect, bg_color)
+
+        # Акцентный маркер для расхождений
+        if status in (
+            ValidationStatus.CRITICAL,
+            ValidationStatus.WARNING,
+            ValidationStatus.UNCERTAIN,
+        ):
+            if status == ValidationStatus.CRITICAL:
+                marker_color = COLOR_CRITICAL_MARKER
+            elif status == ValidationStatus.WARNING:
+                marker_color = COLOR_WARNING_MARKER
+            else:
+                marker_color = COLOR_UNCERTAIN_MARKER
+
+            marker_rect = QRect(rect.left(), rect.top(), 4, rect.height())
+            painter.fillRect(marker_rect, marker_color)
+
+        # Настройка шрифта
+        text_font = QFont(option.font)
+        text_font.setFamilies(["Segoe UI Variable Text", "Segoe UI", "Inter", "sans-serif"])
+        if status in (ValidationStatus.CRITICAL, ValidationStatus.WARNING):
+            text_font.setWeight(QFont.Weight.DemiBold)
+            painter.setPen(COLOR_TEXT_PRIMARY)
+        elif status == ValidationStatus.MATCH:
+            text_font.setWeight(QFont.Weight.Normal)
+            painter.setPen(COLOR_MATCH_TEXT)
+        else:
+            text_font.setWeight(QFont.Weight.Normal)
+            painter.setPen(COLOR_UNCERTAIN_TEXT)
+
+        painter.setFont(text_font)
+        fm = QFontMetrics(text_font)
+
+        # Отрисовка иконки статуса
+        baseline_y = rect.top() + (rect.height() - fm.height()) // 2 + fm.ascent()
+        cap_center_y = baseline_y - (fm.capHeight() / 2.0)
+
+        icon_size = 16
+        icon_top = int(round(cap_center_y - (icon_size / 2.0)))
+        icon_rect = QRect(rect.left() + 16, icon_top, icon_size, icon_size)
+
+        icon = get_status_icon(status)
+        icon.paint(painter, icon_rect)
+
+        # Отрисовка текста параметра
+        text_rect = QRect(
+            rect.left() + 44,
+            rect.top(),
+            rect.width() - 48,
+            rect.height(),
+        )
+        elided_text = fm.elidedText(text, Qt.TextElideMode.ElideRight, text_rect.width())
+        painter.drawText(
+            text_rect,
+            int(Qt.AlignmentFlag.AlignVCenter | Qt.AlignmentFlag.AlignLeft),
+            elided_text,
+        )
+
+        painter.restore()
+
+
+class DiffHighlightDelegate(QStyledItemDelegate):
+    """Делегат колонок сравниваемых документов."""
+
+    def sizeHint(
+        self,
+        option: QStyleOptionViewItem,
+        index: QModelIndex | QPersistentModelIndex,
+    ) -> QSize:
+        """Определяет рекомендуемый размер ячейки."""
+        size = super().sizeHint(option, index)
+        return QSize(size.width(), max(size.height(), 38))
+
+    def paint(
+        self,
+        painter: QPainter,
+        option: QStyleOptionViewItem,
+        index: QModelIndex | QPersistentModelIndex,
+    ) -> None:
+        """Отрисовывает значения с выделением расхождений."""
+        painter.save()
+        painter.setRenderHint(QPainter.RenderHint.Antialiasing, True)
+        painter.setRenderHint(QPainter.RenderHint.TextAntialiasing, True)
+
+        rect = option.rect
+
+        # Фон ячейки
+        if option.state & QStyle.StateFlag.State_Selected:
+            painter.fillRect(rect, COLOR_SELECTION_BG)
+        else:
+            bg_color = index.data(Qt.ItemDataRole.BackgroundRole)
+            if isinstance(bg_color, QColor):
+                painter.fillRect(rect, bg_color)
+
+        status = index.data(STATUS_ROLE) or ValidationStatus.MATCH
+        is_mono = bool(index.data(IS_MONOSPACE_ROLE))
+        diff_spans: list[tuple[str, bool]] = index.data(DIFF_HIGHLIGHTS_ROLE) or []
+        full_text = str(index.data(Qt.ItemDataRole.DisplayRole) or "")
+
+        # Выбор базового шрифта
+        base_font = QFont(option.font)
+        if is_mono:
+            base_font = get_monospace_font(base_font)
+        else:
+            base_font.setFamilies(["Segoe UI Variable Text", "Segoe UI", "Inter", "sans-serif"])
+
+        # Если статус MATCH или UNCERTAIN, или нет diff-срезов — рисуем единым текстом
+        if status not in (ValidationStatus.CRITICAL, ValidationStatus.WARNING) or not diff_spans:
+            if status == ValidationStatus.MATCH:
+                painter.setPen(COLOR_MATCH_TEXT)
+            elif status == ValidationStatus.UNCERTAIN:
+                painter.setPen(COLOR_UNCERTAIN_TEXT)
+            else:
+                painter.setPen(COLOR_TEXT_PRIMARY)
+
+            painter.setFont(base_font)
+            content_rect = QRect(
+                rect.left() + 10,
+                rect.top(),
+                rect.width() - 20,
+                rect.height(),
+            )
+            fm = QFontMetrics(base_font)
+            elided_full = fm.elidedText(
+                full_text, Qt.TextElideMode.ElideRight, content_rect.width()
+            )
+            painter.drawText(
+                content_rect,
+                int(Qt.AlignmentFlag.AlignVCenter | Qt.AlignmentFlag.AlignLeft),
+                elided_full,
+            )
+            painter.restore()
+            return
+
+        # Отрисовка расхождений
+        diff_bg = COLOR_CRITICAL_BG if status == ValidationStatus.CRITICAL else COLOR_WARNING_BG
+        diff_text_color = (
+            COLOR_CRITICAL_TEXT if status == ValidationStatus.CRITICAL else COLOR_WARNING_TEXT
+        )
+
+        bold_font = QFont(base_font)
+        bold_font.setBold(True)
+
+        fm_normal = QFontMetrics(base_font)
+        fm_bold = QFontMetrics(bold_font)
+
+        x_cursor = float(rect.left() + 10)
+        y_center = rect.top() + rect.height() / 2.0
+        max_x = float(rect.right() - 10)
+
+        for chunk, is_diff in diff_spans:
+            if not chunk or x_cursor >= max_x:
+                continue
+
+            current_fm = fm_bold if is_diff else fm_normal
+            chunk_width = float(current_fm.horizontalAdvance(chunk))
+
+            # Если фрагмент не помещается полностью — обрезаем
+            if x_cursor + chunk_width > max_x:
+                available_width = max_x - x_cursor
+                chunk = current_fm.elidedText(
+                    chunk, Qt.TextElideMode.ElideRight, int(available_width)
+                )
+                chunk_width = float(current_fm.horizontalAdvance(chunk))
+
+            # Отрисовка подложки-плашки для отличающихся символов
+            if is_diff:
+                pill_height = float(current_fm.height() + 2)
+                pill_rect = QRectF(
+                    x_cursor - 1.0,
+                    y_center - (pill_height / 2.0),
+                    chunk_width + 2.0,
+                    pill_height,
+                )
+                painter.setBrush(diff_bg)
+                painter.setPen(Qt.PenStyle.NoPen)
+                painter.drawRoundedRect(pill_rect, 3.0, 3.0)
+
+                painter.setFont(bold_font)
+                painter.setPen(diff_text_color)
+            else:
+                painter.setFont(base_font)
+                painter.setPen(COLOR_TEXT_PRIMARY)
+
+            # Отрисовка символов
+            text_baseline = y_center + (current_fm.ascent() - current_fm.descent()) / 2.0
+            painter.drawText(QPoint(int(x_cursor), int(text_baseline)), chunk)
+
+            x_cursor += chunk_width
+
+        painter.restore()
+
+
+class ExplanationColumnDelegate(QStyledItemDelegate):
+    """Делегат колонки пояснений."""
+
+    def sizeHint(
+        self,
+        option: QStyleOptionViewItem,
+        index: QModelIndex | QPersistentModelIndex,
+    ) -> QSize:
+        """Определяет рекомендуемый размер ячейки."""
+        size = super().sizeHint(option, index)
+        return QSize(size.width(), max(size.height(), 38))
+
+    def paint(
+        self,
+        painter: QPainter,
+        option: QStyleOptionViewItem,
+        index: QModelIndex | QPersistentModelIndex,
+    ) -> None:
+        """Отрисовывает текст пояснения."""
+        painter.save()
+        painter.setRenderHint(QPainter.RenderHint.Antialiasing, True)
+        painter.setRenderHint(QPainter.RenderHint.TextAntialiasing, True)
+
+        rect = option.rect
+
+        if option.state & QStyle.StateFlag.State_Selected:
+            painter.fillRect(rect, COLOR_SELECTION_BG)
+        else:
+            bg_color = index.data(Qt.ItemDataRole.BackgroundRole)
+            if isinstance(bg_color, QColor):
+                painter.fillRect(rect, bg_color)
+
+        status = index.data(STATUS_ROLE) or ValidationStatus.MATCH
+        text = str(index.data(Qt.ItemDataRole.DisplayRole) or "")
+
+        font = QFont(option.font)
+        font.setFamilies(["Segoe UI Variable Text", "Segoe UI", "Inter", "sans-serif"])
+        if status == ValidationStatus.MATCH:
+            painter.setPen(COLOR_MATCH_TEXT)
+        elif status == ValidationStatus.CRITICAL:
+            font.setWeight(QFont.Weight.Medium)
+            painter.setPen(COLOR_CRITICAL_TEXT)
+        elif status == ValidationStatus.WARNING:
+            font.setWeight(QFont.Weight.Medium)
+            painter.setPen(COLOR_WARNING_TEXT)
+        else:
+            painter.setPen(COLOR_UNCERTAIN_TEXT)
+
+        painter.setFont(font)
+        text_rect = QRect(rect.left() + 10, rect.top(), rect.width() - 20, rect.height())
+        fm = QFontMetrics(font)
+        elided_exp = fm.elidedText(text, Qt.TextElideMode.ElideRight, text_rect.width())
+        painter.drawText(
+            text_rect,
+            int(Qt.AlignmentFlag.AlignVCenter | Qt.AlignmentFlag.AlignLeft),
+            elided_exp,
+        )
+
+        painter.restore()
