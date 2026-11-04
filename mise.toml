@@ -1,0 +1,54 @@
+# Конфигурация инструментов и задач mise для проекта «Рейс-Проверка»
+# Документация mise: https://mise.jdx.dev
+
+[tools]
+python = "3.13"
+uv = "latest"
+
+[tasks.sync]
+description = "Синхронизация зависимостей виртуального окружения через uv"
+run = "uv sync"
+
+[tasks.test]
+description = "Запуск модульных тестов pytest"
+run = "uv run pytest"
+
+[tasks."test:v"]
+description = "Запуск модульных тестов pytest с подробным выводом"
+run = "uv run pytest -v"
+
+[tasks.lint]
+description = "Проверка стиля кода и статический анализ через Ruff"
+run = "uv run ruff check"
+
+[tasks."lint:fix"]
+description = "Автоматическое исправление замечаний линтера Ruff"
+run = "uv run ruff check --fix"
+
+[tasks.format]
+description = "Форматирование кодовой базы через Ruff"
+run = "uv run ruff format"
+
+[tasks."format:check"]
+description = "Проверка форматирования кодовой базы через Ruff без перезаписи"
+run = "uv run ruff format --check"
+
+[tasks.typecheck]
+description = "Статическая проверка типов basedpyright"
+run = "uv run basedpyright"
+
+[tasks.check]
+description = "Комплексный контроль качества: линтинг, типизация и модульные тесты"
+depends = ["lint", "typecheck", "test"]
+
+[tasks."pre-commit"]
+description = "Запуск хуков pre-commit по всем файлам"
+run = "uv run pre-commit run --all-files"
+
+[tasks.dev]
+description = "Запуск приложения в режиме разработки"
+run = "uv run freight-check"
+
+[tasks.build]
+description = "Сборка исполняемого файла через PyInstaller"
+run = "uv run python scripts/build.py"

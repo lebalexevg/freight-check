@@ -9,10 +9,32 @@
 ### 1.1. Системные требования
 - **Python:** 3.13
 - **Менеджер пакетов:** [`uv`](https://github.com/astral-sh/uv)
+- **Менеджер среды и инструментов (рекомендуется при наличии):** [`mise`](https://mise.jdx.dev)
 - **ОС:** 64-битные версии Windows 10/11 или Linux x86_64
+
+Проект поддерживает два равноправных способа управления инструментами:
+1. **Через `mise` (предпочтительно):** если в вашей системе установлен `mise`, он автоматически использует конфигурацию [`mise.toml`](../mise.toml), фиксируя версии Python 3.13 и uv, а также предоставляя шорткаты задач `mise run <task>`.
+2. **Нативно через `uv`:** если вы предпочитаете работать без `mise`, все операции штатно выполняются стандартными командами `uv sync` и `uv run ...`.
 
 ### 1.2. Пошаговая инициализация проекта
 
+#### Способ 1: С использованием `mise` (при наличии)
+```bash
+# 1. Клонирование репозитория
+git clone <repo-url>
+cd freight-check
+
+# 2. Установка версий инструментов из mise.toml
+mise install
+
+# 3. Синхронизация зависимостей виртуального окружения
+mise run sync
+
+# 4. Активация pre-commit хуков
+mise exec -- uv run pre-commit install
+```
+
+#### Способ 2: Нативно через `uv`
 ```bash
 # 1. Клонирование репозитория
 git clone <repo-url>
@@ -29,39 +51,22 @@ uv run pre-commit install
 
 ## 2. Команды разработки и контроля качества
 
-Все инструменты запускаются в корне репозитория через `uv run`:
+Все инструменты запускаются либо через задачи `mise run <task>` (если используется `mise`), либо напрямую через `uv run`:
 
-```bash
-# 1. Проверка стиля кода и линтинг через Ruff
-uv run ruff check
-
-# 2. Автоматическое исправление замечаний Ruff
-uv run ruff check --fix
-
-# 3. Форматирование кодовой базы через Ruff
-uv run ruff format
-
-# 4. Статическая проверка типов через basedpyright
-uv run basedpyright
-
-# 5. Запуск набора модульных тестов
-uv run pytest
-
-# 6. Запуск тестов с подробным выводом
-uv run pytest -v
-
-# 7. Комплексный прогон всех проверок pre-commit по всем файлам
-uv run pre-commit run --all-files
-
-# 8. Запуск утилиты в режиме разработки
-uv run freight-check
-
-# 9. Запуск полного цикла сборки дистрибутива (PyInstaller + Inno Setup)
-uv run python scripts/build.py
-
-# 10. Быстрый запуск сборщика в Windows PowerShell
-.\build.ps1
-```
+| Операция | С использованием mise | Нативно через uv |
+| :--- | :--- | :--- |
+| **Комплексный контроль (lint + types + test)** | `mise run check` | — *(запуск по цепочке)* |
+| **Проверка стиля и линтинг (Ruff)** | `mise run lint` | `uv run ruff check` |
+| **Автоисправление замечаний Ruff** | `mise run lint:fix` | `uv run ruff check --fix` |
+| **Форматирование кода (Ruff)** | `mise run format` | `uv run ruff format` |
+| **Проверка форматирования без изменений** | `mise run format:check` | `uv run ruff format --check` |
+| **Статическая проверка типов (basedpyright)**| `mise run typecheck` | `uv run basedpyright` |
+| **Запуск модульных тестов (pytest)** | `mise run test` | `uv run pytest` |
+| **Запуск тестов с подробным выводом** | `mise run test:v` | `uv run pytest -v` |
+| **Прогон хуков pre-commit по всем файлам** | `mise run pre-commit` | `uv run pre-commit run --all-files` |
+| **Запуск приложения в режиме разработки** | `mise run dev` | `uv run freight-check` |
+| **Сборка дистрибутива (PyInstaller)** | `mise run build` | `uv run python scripts/build.py` |
+| **Сборщик в Windows PowerShell** | `.\build.ps1` | `.\build.ps1` |
 
 ---
 
@@ -104,7 +109,7 @@ uv run python scripts/build.py
 - `norm` — алгоритмы нормализации: госномера ГОСТ, вес, адреса;
 - `matcher` — движок сопоставления, бизнес-правила и весовой баланс;
 - `pack` — сборка дистрибутива: PyInstaller, Inno Setup;
-- `infra` — настройки проекта: `pyproject.toml`, uv, pre-commit, gitignore.
+- `infra` — настройки проекта: `pyproject.toml`, `mise.toml`, uv, pre-commit, gitignore.
 
 ### 4.3. Примеры правильных сообщений
 - `feat(ui): добавить таблицу расхождений с цветовой индикацией`
@@ -114,6 +119,7 @@ uv run python scripts/build.py
 - `fix(matcher): скорректировать посимвольную проверку номеров строений`
 - `test(matcher): добавить тесты для проверки перегруза автомобиля`
 - `docs(specs): обновить описание конвейера OCR в architecture.md`
+- `feat(infra): настроить конфигурацию mise и шорткаты задач`
 
 ---
 
