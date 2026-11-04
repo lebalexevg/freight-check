@@ -7,25 +7,21 @@ from PyInstaller.utils.hooks import collect_data_files, collect_dynamic_libs, co
 PROJECT_ROOT = Path.cwd().resolve()
 SRC_DIR = PROJECT_ROOT / "src"
 
-# Сбор статических данных и ассетов приложения
 datas = [
     (str(PROJECT_ROOT / "assets" / "icons"), "assets/icons"),
     (str(PROJECT_ROOT / "assets" / "styles"), "assets/styles"),
     (str(PROJECT_ROOT / "assets" / "models"), "assets/models"),
 ]
 
-# Сбор обязательных данных сторонних библиотек
 datas += collect_data_files("rapidocr_onnxruntime")
 datas += collect_data_files("pypdfium2")
 datas += collect_data_files("pypdfium2_raw")
 datas += collect_data_files("docx")
 
-# Сбор нативных динамических библиотек (DLL)
 binaries = []
 binaries += collect_dynamic_libs("pypdfium2_raw")
 binaries += collect_dynamic_libs("onnxruntime")
 
-# Скрытые импорты
 hiddenimports = [
     "PySide6.QtCore",
     "PySide6.QtGui",
@@ -46,7 +42,6 @@ hiddenimports = [
 hiddenimports += collect_submodules("rapidocr_onnxruntime")
 hiddenimports += collect_submodules("freight_check")
 
-# Исключение неиспользуемых тяжелых модулей Qt и тестовых библиотек
 excludes = [
     "tkinter",
     "unittest",
@@ -106,7 +101,6 @@ a = Analysis(
     optimize=0,
 )
 
-# Очистка от неиспользуемых тяжелых бинарников Qt (DLL)
 UNWANTED_DLL_PATTERNS = (
     "qt6qml",
     "qt6quick",

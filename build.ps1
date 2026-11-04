@@ -1,19 +1,18 @@
 <#
 .SYNOPSIS
-    Скрипт автоматизированной сборки дистрибутива «Рейс-Проверка» для Windows 10/11 (x64).
+    Скрипт сборки дистрибутива «Рейс-Проверка» для Windows.
 
 .DESCRIPTION
-    Последовательно запускает uv sync, проверки качества (Ruff, basedpyright, pytest),
-    сборку портативного каталога PyInstaller и компиляцию инсталлятора Inno Setup.
+    Запускает проверку качества и сборку дистрибутива (PyInstaller и Inno Setup).
 
 .PARAMETER SkipTests
-    Пропустить запуск тестов и линтеров (ускоренная dev-сборка).
+    Пропустить запуск тестов и линтеров.
 
 .PARAMETER NoInstaller
     Собрать только портативный каталог без вызова Inno Setup.
 
 .PARAMETER Clean
-    Предварительно очистить каталоги build/, dist/ и dist_installer/.
+    Очистить каталоги сборки перед запуском.
 
 .EXAMPLE
     .\build.ps1
@@ -30,13 +29,11 @@ param(
 
 $ErrorActionPreference = "Stop"
 
-# Подгрузка актуального PATH (включая mise shims)
 $env:PATH = [Environment]::GetEnvironmentVariable("Path", "Machine") + ";" + [Environment]::GetEnvironmentVariable("Path", "User")
 
-# Проверка наличия uv
 $uvCmd = Get-Command "uv" -ErrorAction SilentlyContinue
 if (-not $uvCmd) {
-    Write-Error "Утилита 'uv' не найдена в PATH. Убедитесь, что uv установлен (например, через mise или astral-sh)."
+    Write-Error "Утилита 'uv' не найдена в PATH. Убедитесь, что uv установлен."
     exit 1
 }
 

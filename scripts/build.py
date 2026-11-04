@@ -1,12 +1,4 @@
-"""Скрипт оркестрации и автоматизации сборки дистрибутива «Рейс-Проверка».
-
-Цепочка шагов:
-1. Синхронизация зависимостей через uv sync.
-2. Проверка качества: ruff check, basedpyright, pytest.
-3. Сборка переносимого каталога через PyInstaller.
-4. Поиск компилятора Inno Setup (ISCC.exe) и сборка инсталлятора Windows.
-5. Комплексная проверка целостности выходных артефактов.
-"""
+"""Скрипт сборки дистрибутива «Рейс-Проверка»."""
 
 from __future__ import annotations
 
@@ -19,7 +11,6 @@ import tomllib
 import winreg
 from pathlib import Path
 
-# Обеспечиваем корректный вывод UTF-8 (кириллицы) в консоли Windows
 if sys.platform == "win32":
     if hasattr(sys.stdout, "reconfigure"):
         sys.stdout.reconfigure(encoding="utf-8", errors="replace")
@@ -66,12 +57,10 @@ def get_project_metadata() -> tuple[str, str]:
 
 def find_iscc_compiler() -> Path | None:
     """Осуществляет поиск компилятора Inno Setup (ISCC.exe) в системе."""
-    # 1. Проверка PATH
     which_path = shutil.which("iscc") or shutil.which("iscc.exe") or shutil.which("ISCC")
     if which_path:
         return Path(which_path)
 
-    # 2. Стандартные пути установки Windows
     local_app_data = os.environ.get("LOCALAPPDATA", "")
     program_files_x86 = os.environ.get("PROGRAMFILES(X86)", r"C:\Program Files (x86)")
     program_files = os.environ.get("PROGRAMFILES", r"C:\Program Files")
@@ -86,7 +75,6 @@ def find_iscc_compiler() -> Path | None:
         if candidate.exists():
             return candidate
 
-    # 3. Поиск через реестр Windows (HKLM / HKCU)
     reg_keys = [
         (
             winreg.HKEY_LOCAL_MACHINE,
@@ -126,7 +114,6 @@ def verify_artifacts(version: str, expect_installer: bool) -> None:
         print(f"[ERROR] Бинарный файл {exe_file} не найден или поврежден!", file=sys.stderr)
         sys.exit(1)
 
-    # Проверка ключевых ассетов
     qss_file = internal_dir / "assets" / "styles" / "style.qss"
     icon_file = internal_dir / "assets" / "icons" / "app_icon.ico"
     if not qss_file.exists():
@@ -136,7 +123,6 @@ def verify_artifacts(version: str, expect_installer: bool) -> None:
         print(f"[ERROR] Иконка {icon_file} не найдена в _internal!", file=sys.stderr)
         sys.exit(1)
 
-    # Проверка моделей OCR
     models_dir = internal_dir / "rapidocr_onnxruntime" / "models"
     onnx_models = list(models_dir.glob("*.onnx")) if models_dir.exists() else []
     if len(onnx_models) < 3:
@@ -194,11 +180,9 @@ def main() -> None:
                 print(f"Очистка каталога {path}...")
                 shutil.rmtree(path, ignore_errors=True)
 
-    # Шаг 1: Синхронизация зависимостей
     log_step(1, "Синхронизация зависимостей виртуального окружения (uv sync)")
     run_command(["uv", "sync"], "Синхронизация окружения uv")
 
-    # Шаг 2: Проверка качества
     log_step(2, "Контроль качества кодовой базы")
     if args.skip_tests:
         print("Пропуск проверок качества (--skip-tests).")
@@ -208,7 +192,6 @@ def main() -> None:
         run_command(["uv", "run", "pytest"], "Запуск набора тестов pytest")
         print("[OK] Все тесты и статические анализаторы завершились успешно.")
 
-    # Шаг 3: Сборка каталога через PyInstaller
     log_step(3, "Сборка переносимого каталога через PyInstaller")
     spec_file = PROJECT_ROOT / "freight_check.spec"
     run_command(
@@ -216,7 +199,6 @@ def main() -> None:
         "Сборка PyInstaller",
     )
 
-    # Шаг 4: Сборка инсталлятора Inno Setup
     log_step(4, "Компиляция инсталлятора Inno Setup")
     installer_built = False
     if args.no_installer:
@@ -245,7 +227,6 @@ def main() -> None:
             )
             installer_built = True
 
-    # Шаг 5: Проверка целостности выходных артефактов
     log_step(5, "Валидация целостности собранных артефактов")
     verify_artifacts(version=version, expect_installer=installer_built)
 
