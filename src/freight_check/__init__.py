@@ -13,6 +13,9 @@ with contextlib.suppress(ImportError):
 
 from freight_check.ui.icons import get_app_icon
 from freight_check.ui.main_window import MainWindow
+from freight_check.version import __author__, __version__
+
+__all__ = ["APP_USER_MODEL_ID", "__author__", "__version__", "main"]
 
 APP_USER_MODEL_ID: str = "ru.freightcheck.app.v1"
 

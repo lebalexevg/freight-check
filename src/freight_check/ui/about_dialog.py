@@ -13,8 +13,9 @@ from PySide6.QtWidgets import (
 )
 
 from freight_check.ui.icons import get_app_icon
+from freight_check.version import __version__
 
-APP_VERSION: str = "0.1.0-beta"
+APP_VERSION: str = __version__
 APP_NAME: str = "Рейс-Проверка"
 APP_SUBTITLE: str = "Кросс-валидация транспортных документов"
 

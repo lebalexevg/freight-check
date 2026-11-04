@@ -4,7 +4,8 @@ version = "0.1.0"
 description = "Автономная кросс-валидация транспортных документов"
 readme = "README.md"
 authors = [
-    { name = "Alexander Lebedev", email = "lebalexevg@gmail.com" }
+    { name = "Alexander Lebedev", email = "lebalexevg@gmail.com" },
+    { name = "Egor Hotenov", email = "teremok1123@mail.ru" },
 ]
 requires-python = ">=3.13"
 dependencies = [

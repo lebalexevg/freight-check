@@ -1,3 +1,7 @@
+import tomllib
+from pathlib import Path
+
+import freight_check
 from freight_check.contracts import (
     DocumentPackage,
     ExtractedField,
@@ -5,6 +9,7 @@ from freight_check.contracts import (
     ValidationRow,
     ValidationStatus,
 )
+from freight_check.ui.about_dialog import APP_VERSION
 
 
 def test_extracted_field_creation() -> None:
@@ -45,3 +50,21 @@ def test_document_package_defaults() -> None:
 
     assert package.truck_number is None
     assert package.parsing_errors == []
+
+
+def test_version_consistency() -> None:
+    """Проверка единого источника правды для версии и издателей приложения."""
+    pyproject_path = Path(__file__).resolve().parents[1] / "pyproject.toml"
+    with open(pyproject_path, "rb") as f:
+        data = tomllib.load(f)
+
+    project_version = data["project"]["version"]
+    assert freight_check.__version__ == project_version
+    assert project_version == APP_VERSION
+    assert "Alexander Lebedev" in freight_check.__author__
+    assert "Egor Hotenov" in freight_check.__author__
+
+    authors = data["project"].get("authors", [])
+    author_names = [a["name"] for a in authors if "name" in a]
+    assert "Alexander Lebedev" in author_names
+    assert "Egor Hotenov" in author_names
