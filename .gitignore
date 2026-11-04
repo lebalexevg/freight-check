@@ -29,3 +29,4 @@ dist_installer/
 # Временные тестовые файлы
 *.log
 tests/fixtures/tmp/
+tests/fixtures/synthetic_dataset/

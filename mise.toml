@@ -52,3 +52,7 @@ run = "uv run freight-check"
 [tasks.build]
 description = "Сборка исполняемого файла через PyInstaller"
 run = "uv run python scripts/build.py"
+
+[tasks."generate:dataset"]
+description = "Генерация синтетического набора документов (15 пар по 5 сценариям)"
+run = "uv run python -m scripts.dataset_generator"
