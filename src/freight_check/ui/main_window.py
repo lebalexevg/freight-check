@@ -174,6 +174,12 @@ class MainWindow(QMainWindow):
         qss_path = get_stylesheet_path()
         if qss_path.exists():
             content = qss_path.read_text(encoding="utf-8")
+            checkmark_path = get_resource_path("assets/styles/checkmark.svg")
+            if checkmark_path.exists():
+                content = content.replace(
+                    'url("assets/styles/checkmark.svg")',
+                    f'url("{checkmark_path.as_posix()}")',
+                )
             app = QApplication.instance()
             if isinstance(app, QApplication):
                 app.setStyleSheet(content)
