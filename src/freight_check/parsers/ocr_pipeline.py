@@ -14,13 +14,22 @@ class OCRPipeline(BaseParser):
 
     SUPPORTED_IMAGE_EXTENSIONS = {".png", ".jpg", ".jpeg", ".bmp", ".tiff", ".tif"}
 
-    def __init__(self, use_preprocessing: bool = True, min_confidence: float = 0.3) -> None:
+    # DPI для растеризации PDF (оптимально для OCR)
+    _DPI = 200
+
+    def __init__(
+        self,
+        use_preprocessing: bool = True,
+        min_confidence: float = 0.3,
+        engine: OCREngine | None = None,
+    ) -> None:
         """
         Args:
             use_preprocessing: Применять предобработку изображений.
             min_confidence: Минимальный порог уверенности OCR.
+            engine: Готовый экземпляр OCREngine (для переиспользования).
         """
-        self._engine = OCREngine(use_preprocessing=use_preprocessing)
+        self._engine = engine or OCREngine(use_preprocessing=use_preprocessing)
         self._min_confidence = min_confidence
 
     def parse(self, file_path: Path) -> RawDocument:
@@ -31,32 +40,30 @@ class OCRPipeline(BaseParser):
 
         if ext == ".pdf":
             return self._parse_pdf(file_path)
-        elif ext in self.SUPPORTED_IMAGE_EXTENSIONS:
+        if ext in self.SUPPORTED_IMAGE_EXTENSIONS:
             return self._parse_image(file_path)
-        else:
-            raise ValueError(f"Неподдерживаемый формат для OCR: {ext}")
+
+        raise ValueError(f"Неподдерживаемый формат для OCR: {ext}")
 
     def _parse_pdf(self, file_path: Path) -> RawDocument:
         """Растеризует PDF и распознает каждую страницу."""
         pages: list[list[ExtractedField]] = []
 
-        try:
-            pdf = pdfium.PdfDocument(str(file_path))
+        with pdfium.PdfDocument(str(file_path)) as pdf:
             pages_count = len(pdf)
 
             for page_idx in range(pages_count):
                 page = pdf[page_idx]
-                bitmap = page.render(scale=int(200 / 72))
+
+                # pypdfium2 принимает float для scale, но типы могут быть неточными.
+                # Используем float и type: ignore, чтобы сохранить точный DPI (200/72 ≈ 2.77)
+                bitmap = page.render(scale=self._DPI / 72.0)  # type: ignore[arg-type]
+
                 pil_image = bitmap.to_pil()
                 image = cv2.cvtColor(np.array(pil_image), cv2.COLOR_RGB2BGR)
 
                 fields = self._engine.recognize(image, min_confidence=self._min_confidence)
                 pages.append(fields)
-
-            pdf.close()
-
-        except Exception as e:
-            raise ValueError(f"Ошибка обработки PDF: {e}") from e
 
         return RawDocument(
             file_path=file_path,
@@ -66,16 +73,19 @@ class OCRPipeline(BaseParser):
         )
 
     def _parse_image(self, file_path: Path) -> RawDocument:
-        """Распознает текст на изображении."""
-        try:
-            image = cv2.imread(str(file_path))
-            if image is None:
-                raise ValueError(f"Не удалось прочитать изображение: {file_path}")
+        """Распознает текст на изображении.
 
-            fields = self._engine.recognize(image, min_confidence=self._min_confidence)
+        Читает байты через Python, чтобы корректно работать
+        с кириллическими путями в Windows.
+        """
+        raw_bytes = file_path.read_bytes()
+        image_array = np.frombuffer(raw_bytes, dtype=np.uint8)
+        image = cv2.imdecode(image_array, cv2.IMREAD_COLOR)
 
-        except Exception as e:
-            raise ValueError(f"Ошибка обработки изображения: {e}") from e
+        if image is None:
+            raise ValueError(f"Не удалось декодировать изображение: {file_path}")
+
+        fields = self._engine.recognize(image, min_confidence=self._min_confidence)
 
         return RawDocument(
             file_path=file_path,

@@ -1,8 +1,16 @@
+from functools import lru_cache
+
 import numpy as np
 from rapidocr_onnxruntime import RapidOCR
 
 from freight_check.contracts import ExtractedField
 from freight_check.parsers.preprocessing import ImagePreprocessor
+
+
+@lru_cache(maxsize=1)
+def _get_ocr_engine() -> RapidOCR:
+    """Создает и кэширует единственный экземпляр RapidOCR."""
+    return RapidOCR()
 
 
 class OCREngine:
@@ -12,9 +20,9 @@ class OCREngine:
         """
         Args:
             use_preprocessing: Применять предобработку изображений.
-                             Для сканов — True, для четких цифровых — False.
+                Для сканов — True, для четких цифровых — False.
         """
-        self._engine = RapidOCR()
+        self._engine = _get_ocr_engine()
         self._use_preprocessing = use_preprocessing
 
     def recognize(self, image: np.ndarray, min_confidence: float = 0.0) -> list[ExtractedField]:
@@ -27,7 +35,6 @@ class OCREngine:
         Returns:
             Список извлеченных полей с координатами и уверенностью.
         """
-        # Предобработка только если включена
         processed_image = ImagePreprocessor.process(image) if self._use_preprocessing else image
 
         result, _ = self._engine(processed_image)
@@ -38,7 +45,6 @@ class OCREngine:
         fields: list[ExtractedField] = []
 
         for box, text, score in result:
-            # Явно приводим score к float, так как RapidOCR может вернуть строку
             score_float = float(score)
 
             if score_float < min_confidence:

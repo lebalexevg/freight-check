@@ -14,7 +14,7 @@ from freight_check.parsers.xml_parser import XMLParser
 
 
 class ParserRouter:
-    """Маршрутизатор, выбирающий подходящий парсер на основе расширения файла."""
+    """Маршрутизатор, выбирающий подходящий парсер по расширению файла."""
 
     _parsers: dict[str, type[BaseParser]] = {
         ".xlsx": XLSXParser,
@@ -27,20 +27,19 @@ class ParserRouter:
 
     _ocr_extensions = {".png", ".jpg", ".jpeg", ".bmp", ".tiff", ".tif"}
 
+    _PDF_TEXT_CHECK_PAGES = 3
+
     @classmethod
     def get_parser(cls, file_path: Path) -> BaseParser:
         ext = file_path.suffix.lower()
 
-        # Для изображений всегда используем OCR
         if ext in cls._ocr_extensions:
             return OCRPipeline()
 
-        # Для PDF нужно определить: цифровой или скан
         if ext == ".pdf":
             return cls._detect_pdf_type(file_path)
 
         parser_class = cls._parsers.get(ext)
-
         if not parser_class:
             raise ValueError(f"Неподдерживаемый формат файла: {ext}")
 
@@ -48,20 +47,25 @@ class ParserRouter:
 
     @classmethod
     def _detect_pdf_type(cls, file_path: Path) -> BaseParser:
-        """Определяет тип PDF: цифровой или скан."""
-        try:
-            pdf = pdfium.PdfDocument(str(file_path))
-            page = pdf[0]
-            text = page.get_textpage().get_text_range()
-            pdf.close()
+        """Определяет тип PDF: цифровой или скан.
 
-            # Если есть извлекаемый текст — цифровой PDF
-            if text.strip():
-                return PDFTextParser()
-            else:
-                return OCRPipeline()
+        Проверяет первые несколько страниц на наличие извлекаемого текста.
+        """
+        try:
+            with pdfium.PdfDocument(str(file_path)) as pdf:
+                pages_count = len(pdf)
+                if pages_count == 0:
+                    return OCRPipeline()
+
+                pages_to_check = min(pages_count, cls._PDF_TEXT_CHECK_PAGES)
+                for page_idx in range(pages_to_check):
+                    page = pdf[page_idx]
+                    text = page.get_textpage().get_text_range()
+                    if text.strip():
+                        return PDFTextParser()
+
+            return OCRPipeline()
         except Exception:
-            # Если не удалось прочитать — предполагаем скан
             return OCRPipeline()
 
     @classmethod
