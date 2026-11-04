@@ -17,7 +17,9 @@ __pycache__/
 # Сборка и дистрибутивы
 build/
 dist/
+dist_installer/
 *.spec
+!freight_check.spec
 
 # Артефакты IDE
 .vscode/

@@ -51,6 +51,16 @@ uv run pre-commit install
 uv run freight-check
 ```
 
+### Сборка переносимой версии и инсталлятора Windows
+
+```powershell
+# Автоматическая сборка каталога PyInstaller и инсталлятора Inno Setup
+.\build.ps1
+
+# Сборка только переносимого каталога dist/freight-check/ (без Inno Setup)
+.\build.ps1 -NoInstaller
+```
+
 ---
 
 ## Документация проекта
@@ -70,6 +80,7 @@ uv run freight-check
 ```text
 freight-check/
 ├── assets/
+│   ├── icons/                 # Иконки приложения (.ico, .svg, .png)
 │   ├── models/                # Локальные веса ONNX (RapidOCR)
 │   └── styles/                # Таблицы стилей интерфейса (QSS)
 ├── docs/                      # База знаний и спецификации проекта
@@ -77,13 +88,20 @@ freight-check/
 │   ├── product.md             # Продуктовая спецификация
 │   ├── architecture.md        # Архитектурная и техническая спецификация
 │   └── contributing.md        # Руководство разработчика и Git-регламент
+├── scripts/
+│   └── build.py               # Кроссплатформенный скрипт автоматизации сборки
 ├── src/
 │   └── freight_check/
 │       ├── contracts.py       # Единый источник контрактов данных (Dataclasses)
+│       ├── version.py         # Единый источник правды версии и авторов
 │       ├── ui/                # PySide6 виджеты, Drag-and-Drop, QThread worker
 │       ├── parsers/           # Прямое чтение файлов и конвейер OCR
 │       └── core/              # Семантика, нормализация и сопоставление
 ├── tests/                     # Модульные, интеграционные и системные тесты
+├── .github/workflows/         # Непрерывная интеграция и сборка дистрибутивов CI/CD
+├── build.ps1                  # PowerShell лаунчер сборки для Windows
+├── freight_check.spec         # Спецификация сборщика PyInstaller (onedir)
+├── installer.iss              # Скрипт создания установщика Inno Setup
 ├── .pre-commit-config.yaml    # Автоматизация проверок перед коммитом
 ├── pyproject.toml             # Конфигурация uv, ruff, basedpyright, pytest
 ├── AGENTS.md                  # Инструкции и правила для ИИ-агентов
