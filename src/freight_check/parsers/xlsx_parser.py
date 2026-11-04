@@ -16,16 +16,13 @@ class XLSXParser(BaseParser):
         pages: list[list[ExtractedField]] = []
 
         try:
-            workbook = openpyxl.load_workbook(
-                str(file_path), read_only=True, data_only=True
-            )
-
-            for sheet in workbook.worksheets:
-                page_data = self._process_sheet(sheet)
-                pages.append(page_data)
-
-            workbook.close()
-
+            workbook = openpyxl.load_workbook(str(file_path), read_only=True, data_only=True)
+            try:
+                for sheet in workbook.worksheets:
+                    page_data = self._process_sheet(sheet)
+                    pages.append(page_data)
+            finally:
+                workbook.close()
         except Exception as e:
             raise ValueError(f"Ошибка чтения XLSX: {e}") from e
 
