@@ -127,6 +127,26 @@ class ValidationEngine:
                 )
             )
 
+        if order.cargo_volume_m3 or waybill.cargo_volume_m3:
+            rows.append(
+                self._compare_fuzzy(
+                    parameter_name="Объем груза",
+                    order_field=order.cargo_volume_m3,
+                    waybill_field=waybill.cargo_volume_m3,
+                    success_explanation="Объем груза совпадает",
+                )
+            )
+
+        if order.special_instructions or waybill.special_instructions:
+            rows.append(
+                self._compare_fuzzy(
+                    parameter_name="Особые отметки / инструкции",
+                    order_field=order.special_instructions,
+                    waybill_field=waybill.special_instructions,
+                    success_explanation="Специальные инструкции совпадают",
+                )
+            )
+
         crit_count = sum(1 for r in rows if r.status == ValidationStatus.CRITICAL)
         warn_count = sum(1 for r in rows if r.status == ValidationStatus.WARNING)
         uncertain_count = sum(1 for r in rows if r.status == ValidationStatus.UNCERTAIN)
