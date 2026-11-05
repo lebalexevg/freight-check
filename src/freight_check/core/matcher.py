@@ -109,7 +109,7 @@ class ValidationEngine:
 
         if order.cargo_places_count or waybill.cargo_places_count:
             rows.append(
-                self._compare_fuzzy(
+                self._compare_places(
                     parameter_name="Количество мест",
                     order_field=order.cargo_places_count,
                     waybill_field=waybill.cargo_places_count,
@@ -351,12 +351,19 @@ class ValidationEngine:
         disp1 = order_field.raw_value if order_field else v1
         disp2 = waybill_field.raw_value if waybill_field else v2
 
-        # 1. Сравнение номеров домов и строений
-        h1, h2 = bld1.get("house"), bld2.get("house")
-        c1, c2 = bld1.get("corpus"), bld2.get("corpus")
-        s1, s2 = bld1.get("building"), bld2.get("building")
+        # 1. Проверка города / населенного пункта (если в обоих документах найден город)
+        city1, city2 = bld1.get("city"), bld2.get("city")
+        if city1 and city2 and fuzz.ratio(city1, city2) < 75.0:
+            return ValidationRow(
+                parameter_name=parameter_name,
+                order_value=disp1,
+                waybill_value=disp2,
+                status=ValidationStatus.CRITICAL,
+                explanation=f"Критическое несовпадение города: в заявке г. {city1.capitalize()}, в накладной г. {city2.capitalize()}",
+            )
 
-        # Если номера домов явно указаны в обоих документах и они не равны — это жесткий CRITICAL!
+        # 2. Сравнение номеров домов (д. 15 vs д. 2)
+        h1, h2 = bld1.get("house"), bld2.get("house")
         if h1 and h2 and h1 != h2:
             return ValidationRow(
                 parameter_name=parameter_name,
@@ -366,13 +373,20 @@ class ValidationEngine:
                 explanation=f"Несовпадение номера дома: в заявке д. {h1}, в накладной д. {h2}",
             )
 
-        # Если дом совпал, но отличается корпус или строение — это WARNING
-        if (c1 and c2 and c1 != c2) or (s1 and s2 and s1 != s2):
+        # 3. Сравнение корпусов, строений и литер
+        c1, c2 = bld1.get("corpus"), bld2.get("corpus")
+        s1, s2 = bld1.get("building"), bld2.get("building")
+        l1, l2 = bld1.get("liter"), bld2.get("liter")
+
+        # Если явно указаны разные корпуса, строения или литеры
+        if (c1 and c2 and c1 != c2) or (s1 and s2 and s1 != s2) or (l1 and l2 and l1 != l2):
             diff_parts: list[str] = []
             if c1 and c2 and c1 != c2:
                 diff_parts.append(f"корпус {c1} vs {c2}")
             if s1 and s2 and s1 != s2:
                 diff_parts.append(f"строение {s1} vs {s2}")
+            if l1 and l2 and l1 != l2:
+                diff_parts.append(f"литера {l1} vs {l2}")
             return ValidationRow(
                 parameter_name=parameter_name,
                 order_value=disp1,
@@ -381,8 +395,10 @@ class ValidationEngine:
                 explanation=f"Различие в корпусе/строении: {', '.join(diff_parts)}",
             )
 
-        # Если в одном документе есть литера/корпус/строение, а в другом нет
-        if bld1 != bld2 and (bld1 and bld2):
+        # 4. Если в одном документе есть литера/корпус, а в другом нет (только модификаторы здания!)
+        mods1 = {k: v for k, v in bld1.items() if k in ("corpus", "building", "liter")}
+        mods2 = {k: v for k, v in bld2.items() if k in ("corpus", "building", "liter")}
+        if mods1 != mods2 and (mods1 or mods2):
             return ValidationRow(
                 parameter_name=parameter_name,
                 order_value=disp1,
@@ -391,7 +407,7 @@ class ValidationEngine:
                 explanation="Незначительные различия в указании литеры/корпуса строения",
             )
 
-        # 2. Нечеткое сравнение географической части (город, улица)
+        # 5. Нечеткое сравнение географической части (город, улица)
         score = fuzz.token_set_ratio(geo1, geo2)
 
         if score >= self.FUZZY_MATCH_THRESHOLD:
@@ -495,3 +511,59 @@ class ValidationEngine:
                 )
 
         return rows
+
+    def _compare_places(
+        self,
+        parameter_name: str,
+        order_field: ExtractedField | None,
+        waybill_field: ExtractedField | None,
+        success_explanation: str = "Количество грузовых мест совпадает",
+    ) -> ValidationRow:
+        """Сверка количества мест с числовым контролем недостачи/излишка."""
+        unc = self._check_uncertainty(order_field, waybill_field)
+        if unc:
+            return ValidationRow(
+                parameter_name=parameter_name,
+                order_value=unc.order_value,
+                waybill_value=unc.waybill_value,
+                status=ValidationStatus.UNCERTAIN,
+                explanation=unc.explanation,
+            )
+
+        v1 = order_field.normalized_value if order_field else ""
+        v2 = waybill_field.normalized_value if waybill_field else ""
+
+        if not v1 or not v2:
+            return ValidationRow(
+                parameter_name=parameter_name,
+                order_value=v1 or "—",
+                waybill_value=v2 or "—",
+                status=ValidationStatus.CRITICAL,
+                explanation="Значение не найдено в одном из документов",
+            )
+
+        disp1 = order_field.raw_value if order_field else v1
+        disp2 = waybill_field.raw_value if waybill_field else v2
+
+        import re
+
+        n1 = re.search(r"\d+", v1)
+        n2 = re.search(r"\d+", v2)
+
+        # Если в обоих полях есть числа и они не равны (например 33 vs 32) — это CRITICAL
+        if n1 and n2 and n1.group() != n2.group():
+            diff = abs(int(n1.group()) - int(n2.group()))
+            return ValidationRow(
+                parameter_name=parameter_name,
+                order_value=disp1,
+                waybill_value=disp2,
+                status=ValidationStatus.CRITICAL,
+                explanation=f"Несовпадение количества мест: в заявке {n1.group()}, в накладной {n2.group()} (разница: {diff} шт)",
+            )
+
+        return self._compare_fuzzy(
+            parameter_name=parameter_name,
+            order_field=order_field,
+            waybill_field=waybill_field,
+            success_explanation=success_explanation,
+        )

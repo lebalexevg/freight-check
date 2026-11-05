@@ -137,7 +137,7 @@ def normalize_phone(raw_value: str) -> str:
 
 
 class AddressIdentifiers(dict[str, str]):
-    """Хранит именованные идентификаторы здания (дом, корпус, строение, литера).
+    """Хранит именованные идентификаторы здания и города (город, дом, корпус, строение, литера).
 
     Поддерживает проверку '15' in blds для обратной совместимости с тестами.
     """
@@ -158,28 +158,42 @@ def parse_address(raw_value: str) -> tuple[str, AddressIdentifiers]:
     text = raw_value.strip()
     identifiers = AddressIdentifiers()
 
+    # 0. Город / населенный пункт
+    city_match = re.search(
+        r"\b(?:г|город|пгт|пос|поселок|село|с|дер|деревня)\b\.?\s*([а-яА-Яa-zA-Z\-]+)",
+        text,
+        re.IGNORECASE,
+    )
+    if city_match:
+        identifiers["city"] = city_match.group(1).strip().lower()
+
+    # 1. Номер дома (поддерживает дроби, например 12/1)
     house_match = re.search(
         r"\b(?:дом|д)\b\.?\s*(\d+[а-яА-Яa-zA-Z]?(?:/\d+)?)", text, re.IGNORECASE
     )
     if house_match:
         identifiers["house"] = house_match.group(1).strip().lower()
 
+    # 2. Корпус
     corpus_match = re.search(
         r"\b(?:корпус|корп|к)\b\.?\s*(\d+[а-яА-Яa-zA-Z]?)", text, re.IGNORECASE
     )
     if corpus_match:
         identifiers["corpus"] = corpus_match.group(1).strip().lower()
 
+    # 3. Строение
     bld_match = re.search(r"\b(?:строение|стр)\b\.?\s*(\d+[а-яА-Яa-zA-Z]?)", text, re.IGNORECASE)
     if bld_match:
         identifiers["building"] = bld_match.group(1).strip().lower()
 
+    # 4. Литера
     liter_match = re.search(
         r"\b(?:литера|литер|лит)\b\.?\s*([а-яА-Яa-zA-Z\d]+)", text, re.IGNORECASE
     )
     if liter_match:
         identifiers["liter"] = liter_match.group(1).strip().lower()
 
+    # Очистка адреса от номеров строений для нечеткого сравнения
     geo_part = text
     for pattern in _BUILDING_PATTERNS:
         geo_part = pattern.sub("", geo_part)
