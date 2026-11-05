@@ -351,24 +351,47 @@ class ValidationEngine:
         disp1 = order_field.raw_value if order_field else v1
         disp2 = waybill_field.raw_value if waybill_field else v2
 
-        if bld1 and bld2 and bld1 != bld2:
-            diff_msg = f"в заявке {', '.join(sorted(bld1))}, в накладной {', '.join(sorted(bld2))}"
-            if bld1.isdisjoint(bld2):
-                return ValidationRow(
-                    parameter_name=parameter_name,
-                    order_value=disp1,
-                    waybill_value=disp2,
-                    status=ValidationStatus.CRITICAL,
-                    explanation=f"Несовпадение номера дома: {diff_msg}",
-                )
+        # 1. Сравнение номеров домов и строений
+        h1, h2 = bld1.get("house"), bld2.get("house")
+        c1, c2 = bld1.get("corpus"), bld2.get("corpus")
+        s1, s2 = bld1.get("building"), bld2.get("building")
+
+        # Если номера домов явно указаны в обоих документах и они не равны — это жесткий CRITICAL!
+        if h1 and h2 and h1 != h2:
+            return ValidationRow(
+                parameter_name=parameter_name,
+                order_value=disp1,
+                waybill_value=disp2,
+                status=ValidationStatus.CRITICAL,
+                explanation=f"Несовпадение номера дома: в заявке д. {h1}, в накладной д. {h2}",
+            )
+
+        # Если дом совпал, но отличается корпус или строение — это WARNING
+        if (c1 and c2 and c1 != c2) or (s1 and s2 and s1 != s2):
+            diff_parts: list[str] = []
+            if c1 and c2 and c1 != c2:
+                diff_parts.append(f"корпус {c1} vs {c2}")
+            if s1 and s2 and s1 != s2:
+                diff_parts.append(f"строение {s1} vs {s2}")
             return ValidationRow(
                 parameter_name=parameter_name,
                 order_value=disp1,
                 waybill_value=disp2,
                 status=ValidationStatus.WARNING,
-                explanation=f"Незначительные различия в строении/литере: {diff_msg}",
+                explanation=f"Различие в корпусе/строении: {', '.join(diff_parts)}",
             )
 
+        # Если в одном документе есть литера/корпус/строение, а в другом нет
+        if bld1 != bld2 and (bld1 and bld2):
+            return ValidationRow(
+                parameter_name=parameter_name,
+                order_value=disp1,
+                waybill_value=disp2,
+                status=ValidationStatus.WARNING,
+                explanation="Незначительные различия в указании литеры/корпуса строения",
+            )
+
+        # 2. Нечеткое сравнение географической части (город, улица)
         score = fuzz.token_set_ratio(geo1, geo2)
 
         if score >= self.FUZZY_MATCH_THRESHOLD:

@@ -136,29 +136,55 @@ def normalize_phone(raw_value: str) -> str:
     return raw_value.strip()
 
 
-def parse_address(raw_value: str) -> tuple[str, frozenset[str]]:
-    """Разбивает адресную строку на географическую часть и строгие идентификаторы строений.
+class AddressIdentifiers(dict[str, str]):
+    """Хранит именованные идентификаторы здания (дом, корпус, строение, литера).
+
+    Поддерживает проверку '15' in blds для обратной совместимости с тестами.
+    """
+
+    def __contains__(self, item: object) -> bool:
+        return super().__contains__(item) or item in self.values()
+
+
+def parse_address(raw_value: str) -> tuple[str, AddressIdentifiers]:
+    """Разбивает адресную строку на географическую часть и структурированные номера строений.
 
     :param raw_value: Исходная строка адреса.
-    :return: Кортеж (географическая_часть, множество_идентификаторов_домов).
+    :return: Кортеж (географическая_часть, структурированные_номера_строений).
     """
     if not raw_value:
-        return "", frozenset()
+        return "", AddressIdentifiers()
 
     text = raw_value.strip()
+    identifiers = AddressIdentifiers()
 
-    identifiers: set[str] = set()
-    for pattern in _BUILDING_PATTERNS:
-        matches = pattern.findall(text)
-        for m in matches:
-            identifiers.add(m.strip().lower())
+    house_match = re.search(
+        r"\b(?:дом|д)\b\.?\s*(\d+[а-яА-Яa-zA-Z]?(?:/\d+)?)", text, re.IGNORECASE
+    )
+    if house_match:
+        identifiers["house"] = house_match.group(1).strip().lower()
+
+    corpus_match = re.search(
+        r"\b(?:корпус|корп|к)\b\.?\s*(\d+[а-яА-Яa-zA-Z]?)", text, re.IGNORECASE
+    )
+    if corpus_match:
+        identifiers["corpus"] = corpus_match.group(1).strip().lower()
+
+    bld_match = re.search(r"\b(?:строение|стр)\b\.?\s*(\d+[а-яА-Яa-zA-Z]?)", text, re.IGNORECASE)
+    if bld_match:
+        identifiers["building"] = bld_match.group(1).strip().lower()
+
+    liter_match = re.search(
+        r"\b(?:литера|литер|лит)\b\.?\s*([а-яА-Яa-zA-Z\d]+)", text, re.IGNORECASE
+    )
+    if liter_match:
+        identifiers["liter"] = liter_match.group(1).strip().lower()
 
     geo_part = text
     for pattern in _BUILDING_PATTERNS:
         geo_part = pattern.sub("", geo_part)
 
     geo_part = re.sub(r"[\s,;]+", " ", geo_part).strip().lower()
-
     geo_part = re.sub(
         r"\b(?:г|город|пос|пгт|с|село|д|деревня|обл|область|р-н|район|ул|улица|пр|пр-кт|проспект|ш|шоссе|пер|переулок|проезд|наб|набережная)\.?\b",
         "",
@@ -166,4 +192,4 @@ def parse_address(raw_value: str) -> tuple[str, frozenset[str]]:
     )
     geo_part = re.sub(r"\s+", " ", geo_part).strip()
 
-    return geo_part, frozenset(identifiers)
+    return geo_part, identifiers
