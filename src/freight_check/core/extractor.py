@@ -28,7 +28,7 @@ _ANCHORS: dict[str, tuple[str, ...]] = {
     "truck_capacity_kg": ("грузоподъемность", "г/п", "паспортная г/п", "вместимость"),
     "driver_name": ("водитель", "фио водителя", "фио", "управляющий"),
     "driver_passport": ("паспорт", "серия и номер паспорта", "уд. личности", "документ"),
-    "driver_phone": ("телефон", "тел", "контактный телефон", "моб"),
+    "driver_phone": ("телефон", "тел.", "тел:", "контактный телефон", "моб"),
     "cargo_weight_kg": ("масса", "вес", "масса груза", "вес груза", "нетто", "масса нетто"),
     "cargo_volume_m3": ("объем", "объем груза", "куб.м", "м3"),
     "cargo_places_count": ("количество мест", "мест", "паллет", "грузовых мест"),
@@ -84,7 +84,8 @@ class SemanticExtractor:
                     continue
 
                 for kw in keywords:
-                    if kw in text_lower:
+                    pattern = r"(?:\b|^)" + re.escape(kw) + r"(?:\b|[:=]|$)"
+                    if re.search(pattern, text_lower):
                         val_str = self._extract_value_after_keyword(field.raw_value, kw)
                         field_confidence = field.confidence
                         box = field.source_box

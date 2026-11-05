@@ -218,6 +218,35 @@ class ValidationEngine:
             explanation=f"Расхождение в {parameter_name.lower()}: '{v1}' в заявке vs '{v2}' в накладной",
         )
 
+    @staticmethod
+    def _is_initials_match(name1: str, name2: str) -> bool:
+        """Проверяет, является ли одно имя сокращением другого по инициалам (Иванов И.И. == Иванов Иван Иванович)."""
+        import re
+
+        def split_name(name: str) -> list[str]:
+            cleaned = re.sub(r"[.\-_]", " ", name)
+            return [part.lower() for part in cleaned.split() if part.strip()]
+
+        parts1 = split_name(name1)
+        parts2 = split_name(name2)
+
+        if len(parts1) < 2 or len(parts2) < 2:
+            return False
+
+        if parts1[0] != parts2[0]:
+            return False
+
+        p1_rest = parts1[1:]
+        p2_rest = parts2[1:]
+
+        if len(p1_rest) == len(p2_rest):
+            return all(
+                a == b or a.startswith(b) or b.startswith(a)
+                for a, b in zip(p1_rest, p2_rest, strict=True)
+            )
+
+        return False
+
     def _compare_fuzzy(
         self,
         parameter_name: str,
@@ -248,11 +277,20 @@ class ValidationEngine:
                 explanation="Значение не заполнено",
             )
 
-        score = fuzz.token_sort_ratio(v1, v2)
-
         disp1 = order_field.raw_value if order_field else v1
         disp2 = waybill_field.raw_value if waybill_field else v2
 
+        is_driver_field = "фио" in parameter_name.lower() or "водитель" in parameter_name.lower()
+        if is_driver_field and self._is_initials_match(v1, v2):
+            return ValidationRow(
+                parameter_name=parameter_name,
+                order_value=disp1,
+                waybill_value=disp2,
+                status=ValidationStatus.MATCH,
+                explanation="Инициалы полностью соответствуют ФИО",
+            )
+
+        score = fuzz.token_sort_ratio(v1, v2)
         if score >= self.FUZZY_MATCH_THRESHOLD:
             return ValidationRow(
                 parameter_name=parameter_name,
