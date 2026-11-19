@@ -68,8 +68,19 @@ class ValidationWorker(QThread):
             if self._scenario_key and self._scenario_key in all_scenarios:
                 report = all_scenarios[self._scenario_key]
             else:
-                # По умолчанию сценарий 1 (полное совпадение)
-                report = get_mock_scenario_1_match()
+                from pathlib import Path
+
+                from freight_check.core import ValidationEngine, extract_package_from_file
+
+                p_order = Path(self._order_path)
+                p_waybill = Path(self._waybill_path)
+
+                if p_order.exists() and p_waybill.exists():
+                    order_pkg = extract_package_from_file(p_order, role="order")
+                    waybill_pkg = extract_package_from_file(p_waybill, role="waybill")
+                    report = ValidationEngine().validate(order_pkg, waybill_pkg)
+                else:
+                    report = get_mock_scenario_1_match()
 
             self.validation_finished.emit(report)
 
