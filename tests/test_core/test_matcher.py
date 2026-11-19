@@ -227,3 +227,135 @@ def test_scenario_5_low_confidence_ocr() -> None:
     trailer_row = next(r for r in report.rows if r.parameter_name == "Госномер прицепа")
     assert trailer_row.status == ValidationStatus.UNCERTAIN
     assert "OCR" in trailer_row.explanation
+
+
+def test_driver_surname_mismatch_is_critical() -> None:
+    """Несовпадение фамилии водителя (даже при одинаковых инициалах) — строгий CRITICAL."""
+    order = DocumentPackage(
+        document_role="order",
+        file_path="order.pdf",
+        driver_name=ExtractedField(
+            raw_value="Петров Иван Иванович",
+            normalized_value="Петров Иван Иванович",
+            confidence=1.0,
+        ),
+    )
+    waybill = DocumentPackage(
+        document_role="waybill",
+        file_path="waybill.xml",
+        driver_name=ExtractedField(
+            raw_value="Сидоров Иван Иванович",
+            normalized_value="Сидоров Иван Иванович",
+            confidence=1.0,
+        ),
+    )
+    report = ValidationEngine().validate(order, waybill)
+    assert report.overall_status == ValidationStatus.CRITICAL
+    row = next(r for r in report.rows if r.parameter_name == "ФИО водителя")
+    assert row.status == ValidationStatus.CRITICAL
+    assert "Несовпадение фамилии" in row.explanation
+
+
+def test_weight_ocr_uncertainty() -> None:
+    """Если масса груза распознана с низкой уверенностью OCR (< 0.70) — UNCERTAIN."""
+    order = DocumentPackage(
+        document_role="order",
+        file_path="order.pdf",
+        cargo_weight_kg=ExtractedField(
+            raw_value="18 500 кг",
+            normalized_value="18500",
+            confidence=1.0,
+        ),
+    )
+    waybill = DocumentPackage(
+        document_role="waybill",
+        file_path="waybill.png",
+        cargo_weight_kg=ExtractedField(
+            raw_value="18 500? кг",
+            normalized_value="18500",
+            confidence=0.55,  # Низкая уверенность
+        ),
+    )
+    report = ValidationEngine().validate(order, waybill)
+    assert report.overall_status == ValidationStatus.UNCERTAIN
+    row = next(r for r in report.rows if r.parameter_name == "Масса груза (нетто)")
+    assert row.status == ValidationStatus.UNCERTAIN
+    assert "OCR" in row.explanation
+
+
+def test_cargo_places_match_immediately() -> None:
+    """Одинаковое число мест должно давать MATCH без перехода в нечеткое сравнение."""
+    order = DocumentPackage(
+        document_role="order",
+        file_path="order.pdf",
+        cargo_places_count=ExtractedField(
+            raw_value="16 мест",
+            normalized_value="16 мест",
+            confidence=1.0,
+        ),
+    )
+    waybill = DocumentPackage(
+        document_role="waybill",
+        file_path="waybill.xml",
+        cargo_places_count=ExtractedField(
+            raw_value="16",
+            normalized_value="16",
+            confidence=1.0,
+        ),
+    )
+    report = ValidationEngine().validate(order, waybill)
+    assert report.overall_status == ValidationStatus.MATCH
+    row = next(r for r in report.rows if r.parameter_name == "Количество мест")
+    assert row.status == ValidationStatus.MATCH
+
+
+def test_address_city_mismatch_with_different_liter_is_critical() -> None:
+    """Разные города не должны маскироваться под WARNING из-за несовпадения литеры/корпуса."""
+    order = DocumentPackage(
+        document_role="order",
+        file_path="order.pdf",
+        unloading_point=ExtractedField(
+            raw_value="г. Москва, ул. Ленина, д. 15, стр. 2",
+            normalized_value="г. Москва, ул. Ленина, д. 15, стр. 2",
+            confidence=1.0,
+        ),
+    )
+    waybill = DocumentPackage(
+        document_role="waybill",
+        file_path="waybill.xml",
+        unloading_point=ExtractedField(
+            raw_value="г. Казань, ул. Восстания, д. 15",  # Другой город, нет стр. 2
+            normalized_value="г. Казань, ул. Восстания, д. 15",
+            confidence=1.0,
+        ),
+    )
+    report = ValidationEngine().validate(order, waybill)
+    assert report.overall_status == ValidationStatus.CRITICAL
+    row = next(r for r in report.rows if r.parameter_name == "Адрес выгрузки")
+    assert row.status == ValidationStatus.CRITICAL
+
+
+def test_optional_trailer_in_one_doc_is_warning_not_critical() -> None:
+    """Отсутствие прицепа в одном из документов не должно ставить CRITICAL."""
+    order = DocumentPackage(
+        document_role="order",
+        file_path="order.pdf",
+        trailer_number=ExtractedField(
+            raw_value="Без прицепа",
+            normalized_value="Без прицепа",
+            confidence=1.0,
+        ),
+    )
+    waybill = DocumentPackage(
+        document_role="waybill",
+        file_path="waybill.xml",
+        trailer_number=ExtractedField(
+            raw_value="АК 8899 77",
+            normalized_value="АК889977",
+            confidence=1.0,
+        ),
+    )
+    report = ValidationEngine().validate(order, waybill)
+    assert report.overall_status == ValidationStatus.WARNING
+    row = next(r for r in report.rows if r.parameter_name == "Госномер прицепа")
+    assert row.status == ValidationStatus.WARNING
