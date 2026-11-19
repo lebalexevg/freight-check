@@ -46,6 +46,7 @@ class DocumentPackage:
     cargo_places_count: ExtractedField | None = None
     loading_point: ExtractedField | None = None
     unloading_point: ExtractedField | None = None
+    consignee: ExtractedField | None = None
     temperature_conditions: ExtractedField | None = None
     special_instructions: ExtractedField | None = None
     parsing_errors: list[str] = field(default_factory=list)

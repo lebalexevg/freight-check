@@ -106,7 +106,7 @@ def normalize_weight(raw_value: str) -> int | None:
     except ValueError:
         return None
 
-    is_tons = bool(re.search(r"(?:тн?|тонн[а-я]*|tn|ton)", text))
+    is_tons = bool(re.search(r"\b(?:т|тн|тонн[а-я]*|tn|tons?)\b", text))
 
     if is_tons or (1.0 <= val <= 50.0 and "кг" not in text and "kg" not in text):
         return int(round(val * 1000))
@@ -207,3 +207,18 @@ def parse_address(raw_value: str) -> tuple[str, AddressIdentifiers]:
     geo_part = re.sub(r"\s+", " ", geo_part).strip()
 
     return geo_part, identifiers
+
+
+def clean_company_name(text: str) -> str:
+    """Извлекает наименование юрлица в кавычках, отсекая ИНН и юридический текст."""
+    if not text:
+        return ""
+
+    # 1. Если есть название в кавычках (ООО "...", ЗАО "...") — берем только его
+    m = re.search(r'\b(?:ООО|ЗАО|АО|ПАО|ОАО|ИП)?\s*["«][^"»]+["»]', text, re.IGNORECASE)
+    if m:
+        return m.group(0).strip()
+
+    # 2. Иначе отсекаем текст до скобок (ИНН ...) или запятой
+    cleaned = re.split(r"[(,]|(?:\b(?:ИНН|ОГРН|с одной стороны)\b)", text, flags=re.IGNORECASE)[0]
+    return cleaned.strip()
